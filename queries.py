@@ -43,7 +43,7 @@ if __name__ == '__main__':
         connection = mysql.connector.connect(host='localhost',
                                              database='covid-19 global data displayer',
                                              user='root',
-                                             password='yiT68901')  # put your MYSQL server password here.
+                                             password='put_your_password_here')  # put your MYSQL server password here.
 
         if connection.is_connected():
             db_Info = connection.get_server_info()
