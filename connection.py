@@ -41,7 +41,9 @@ def insert_into_table(csv_name, table_name, my_cursor, my_connection):
             # In measurement table: (data[1] = date) --> we want to change the date format.
             # for example: 24/02/2020 --> 2020-02-24.
             if len(data) > 1 and ('/' in data[1]):
-                data[1] = parse(data[1]).strftime('%Y-%m-%d')
+                data[1] = data[1].replace("/", "-")
+                my_list = data[1].split("-")
+                data[1] = my_list[2] + "-" + my_list[1] + "-" + my_list[0]
 
             my_cursor.execute(query, data)
         my_connection.commit()
