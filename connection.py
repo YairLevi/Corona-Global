@@ -2,7 +2,6 @@ import csv
 import mysql.connector
 import pandas as pd
 import os
-from dateutil.parser import parse
 
 
 # Given a cursor, a db_table_name, and q query --> Check if there is a table in the DB with 'db_table_name' name
