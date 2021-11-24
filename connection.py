@@ -116,6 +116,19 @@ def set_fk_for_measurements_table(my_cursor, my_connection, csv_name):
     delete_file('combined.csv')
 
 
+# check if one of the msr_value in measurement's table is below 0 and if so set msr_value = 0.
+def add_trigger_to_measurements_table(my_cursor, my_connection):
+    my_cursor.execute("drop trigger if exists measurements_trigger")
+    query = "CREATE TRIGGER measurements_trigger" \
+            " BEFORE INSERT ON measurement" \
+            " FOR EACH ROW" \
+            " BEGIN" \
+            " IF NEW.msr_value < 0 THEN" \
+            " SET NEW.msr_value = 0; END IF; END; "
+    my_cursor.execute(query)
+    my_connection.commit()
+
+
 # Connect to MYSQL server, creates tables, and upload them to the server, and insert values to them.
 if __name__ == '__main__':
     connection = None
@@ -204,6 +217,8 @@ if __name__ == '__main__':
                                                             ON UPDATE RESTRICT);
                                                          """)
 
+            add_trigger_to_measurements_table(cursor, connection)
+
             # insert values to table:
             insert_into_table('measurements.csv', 'measurement', cursor, connection)
             print("Insert values to measurement table successfully")
@@ -218,7 +233,7 @@ if __name__ == '__main__':
             cursor.execute('SET FOREIGN_KEY_CHECKS = 1;')
 
     except mysql.connector.Error as error:
-        print("Failed to create table in MySQL: {}".format(error))
+        print("Error in MySQL: {}".format(error))
     finally:
         if connection.is_connected():
             cursor.close()
