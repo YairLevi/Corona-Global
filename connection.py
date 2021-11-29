@@ -129,6 +129,11 @@ def add_trigger_to_measurements_table(my_cursor, my_connection):
     my_connection.commit()
 
 
+def add_indices_to_measurements_table(my_cursor, my_connection):
+    my_cursor.execute("CREATE INDEX searchIndex ON measurement(msr_timestamp, FKmsr_id, msr_value);")
+    my_connection.commit()
+
+
 # Connect to MYSQL server, creates tables, and upload them to the server, and insert values to them.
 if __name__ == '__main__':
     connection = None
@@ -137,7 +142,7 @@ if __name__ == '__main__':
         connection = mysql.connector.connect(host='localhost',
                                              database='covid-19 global data displayer',
                                              user='root',
-                                             password='put_your_password_here')  # put your MYSQL server password here.
+                                             password='your_password')  # put your MYSQL server password here.
         if connection.is_connected():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
@@ -194,7 +199,7 @@ if __name__ == '__main__':
             print("Insert values to msrtype table successfully")
 
             # set FK for measurements_table
-            set_fk_for_measurements_table(cursor, connection, 'measurements.csv')
+            # set_fk_for_measurements_table(cursor, connection, 'measurements.csv')
 
             create_table(cursor, 'measurement', """CREATE TABLE `covid-19 global data displayer`.`measurement` (
                                                           `PKmeasurement_id` INT NOT NULL AUTO_INCREMENT,
@@ -217,6 +222,7 @@ if __name__ == '__main__':
                                                             ON UPDATE RESTRICT);
                                                          """)
 
+            add_indices_to_measurements_table(cursor, connection)
             add_trigger_to_measurements_table(cursor, connection)
 
             # insert values to table:
@@ -229,6 +235,27 @@ if __name__ == '__main__':
                                               `admin_pwd` VARCHAR(45) NULL,
                                               PRIMARY KEY (`PKadmin_id`));
                                                                      """)
+
+            create_table(cursor, 'measurement_update', """CREATE TABLE `covid-19 global data displayer`.`measurement_update` (
+                                              `PKupdate_id` INT NOT NULL AUTO_INCREMENT,
+                                              `FKcountry_id` INT NULL,
+                                              `msr_timestamp` DATE NULL,
+                                              `FKmsr_id` INT NULL,
+                                              `msr_value` FLOAT NULL,
+                                              PRIMARY KEY (`PKupdate_id`),
+                                              INDEX `measurement_update_FKcountry_id_idx` (`FKcountry_id` ASC) VISIBLE,
+                                              INDEX `measurement_update_FKmsr_id_idx` (`FKmsr_id` ASC) VISIBLE,
+                                              CONSTRAINT `measurement_update_FKcountry_id`
+                                                FOREIGN KEY (`FKcountry_id`)
+                                                REFERENCES `covid-19 global data displayer`.`country` (`PKcountry_id`)
+                                                ON DELETE RESTRICT
+                                                ON UPDATE RESTRICT,
+                                              CONSTRAINT `measurement_update_FKmsr_id`
+                                                FOREIGN KEY (`FKmsr_id`)
+                                                REFERENCES `covid-19 global data displayer`.`msrtype` (`PKmsr_id`)
+                                                ON DELETE RESTRICT
+                                                ON UPDATE RESTRICT);
+                                            """)
 
             cursor.execute('SET FOREIGN_KEY_CHECKS = 1;')
 
