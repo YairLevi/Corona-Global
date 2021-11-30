@@ -301,14 +301,20 @@ def user_update(country_name, date, variable, value):
     print("Insert an update for measurement_update table successfully")
 
 
-# A new admin wants to sign up. We add this admin to admin table.
-def add_admin(admin_name, admin_password):
-    query = """INSERT INTO admin ({0}) VALUES (%s, %s);"""
-    query = query.format(','.join(['admin_name', 'admin_pwd']))
-    data = [admin_name, admin_password]
-    cursor.execute(query, data)
-    connection.commit()
-    print("Insert a new admin for admin table successfully")
+# An admin wants to connect to the system, and we need to make sure he is one of the existing admins in the system.
+# If this admin exists in the DB return True, otherwise return False.
+def check_admin(admin_name, admin_password):
+    query = """SELECT EXISTS(select admin_name, admin_pwd
+                from admin
+                where admin_name = '{0}' and admin_pwd = '{1}')"""
+    query = query.format(admin_name, admin_password)
+    flag = pd.read_sql_query(query, connection).values[0][0]
+    print(flag)
+    if flag > 0:
+        print("this admin exists in the system")
+        return True
+    print("this admin doesn't exist in the system")
+    return False
 
 
 # An existing admin wants to add a new measurement type. We add this type to msrtype table.
@@ -406,13 +412,13 @@ if __name__ == '__main__':
             # percentage_of_verified_deaths_out_of_total_cases()
             # percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent()
             # get_static_data("Australia", "population")
-            # add_admin('tal', '1234')
+            # check_admin('yair', '12')
             # add_new_measurement_type("smoking")
             # get_updates_for_display()
             # user_update("Portugal", "2020-03-19", "new_cases", 100)
             # user_update("Israel", "2020-03-20", "total_cases", 200)
             # confirm_user_update(
-            #     [["Portugal", "2020-03-19", "new_cases", '100'], ["Israel", "2020-03-20", "total_cases", '200']])
+            #      [["Portugal", "2020-03-19", "new_cases", '100'], ["Israel", "2020-03-20", "total_cases", '200']])
 
     except mysql.connector.Error as error:
         print("Error in MySQL: {}".format(error))

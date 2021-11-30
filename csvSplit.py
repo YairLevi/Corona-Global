@@ -71,6 +71,12 @@ def create_measurements_table(file_name, table_name):
     df.to_csv(table_name, index=False)
 
 
+# create admins file.
+def create_admins(admins_list):
+    df = pd.DataFrame(admins_list, columns=['admin_name', 'admin_pwd'])
+    df.to_csv('admins.csv', index=False)
+
+
 # Given the original csv file, we create several csv files for the requested tables in our DB.
 if __name__ == '__main__':
     create_countries('covid_data_set_OWID.csv',
@@ -88,3 +94,5 @@ if __name__ == '__main__':
     create_msrtype_table('covid_data_set_OWID.csv', 'msrType.csv')
 
     create_measurements_table('covid_data_set_OWID.csv', 'measurements.csv')
+
+    create_admins([['tal', '1234'], ['noam', '567438'], ['yair', '12']])

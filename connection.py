@@ -199,7 +199,7 @@ if __name__ == '__main__':
             print("Insert values to msrtype table successfully")
 
             # set FK for measurements_table
-            # set_fk_for_measurements_table(cursor, connection, 'measurements.csv')
+            set_fk_for_measurements_table(cursor, connection, 'measurements.csv')
 
             create_table(cursor, 'measurement', """CREATE TABLE `covid-19 global data displayer`.`measurement` (
                                                           `PKmeasurement_id` INT NOT NULL AUTO_INCREMENT,
@@ -235,6 +235,9 @@ if __name__ == '__main__':
                                               `admin_pwd` VARCHAR(45) NULL,
                                               PRIMARY KEY (`PKadmin_id`));
                                                                      """)
+            # insert values to table:
+            insert_into_table('admins.csv', 'admin', cursor, connection)
+            print("Insert values to admin table successfully")
 
             create_table(cursor, 'measurement_update', """CREATE TABLE `covid-19 global data displayer`.`measurement_update` (
                                               `PKupdate_id` INT NOT NULL AUTO_INCREMENT,
