@@ -368,23 +368,45 @@ def confirm_user_update(update_list):
 
 # Return amount of updates from the update table that will be display for the admin
 def get_updates_for_display() -> dict:
-    results = pd.read_sql_query("""SELECT DISTINCT country.country_name ,measurement_update.msr_timestamp,
+    amount_of_rows_in_table = pd.read_sql_query("""SELECT count(*) from measurement_update;""", connection).values[0][0]
+    if amount_of_rows_in_table < 10:
+        amount_of_updates_for_display = amount_of_rows_in_table
+    else:
+        amount_of_updates_for_display = 10
+
+    query = """SELECT DISTINCT country.country_name ,measurement_update.msr_timestamp,
                                 msrtype.msr_name, measurement_update.msr_value
                                 FROM measurement_update, country, msrtype
                                 where country.PKcountry_id = measurement_update.FKcountry_id and 
                                 measurement_update.FKmsr_id = msrtype.PKmsr_id
-                                LIMIT 1;""", connection)
+                                LIMIT {0};"""
+    query = query.format(amount_of_updates_for_display)
+    results = pd.read_sql_query(query, connection)
+
     my_dict = {}
     for row in results.values:
         if row[1].month < 10:
             date = "{0}-0{1}-{2}".format(row[1].year, row[1].month, row[1].day)
         else:
             date = "{0}-{1}-{2}".format(row[1].year, row[1].month, row[1].day)
-        my_dict[row[0]] = {
-            'msr_timestamp': date,
-            'msr_name': row[2],
-            'msr_value': row[3]
-        }
+
+        # my_dict[country] = [dict1, dict2, ... , dict_k]
+        # (if this country has k measurement's updates in the DB).
+        # each value in the list will be a dictionary that represent an update of the same country in the DB.
+
+        # check if we already have this country as a key:
+        if row[0] in my_dict:
+            my_dict[row[0]].append({
+                'msr_timestamp': date,
+                'msr_name': row[2],
+                'msr_value': row[3]
+            })
+        else:
+            my_dict[row[0]] = [{
+                'msr_timestamp': date,
+                'msr_name': row[2],
+                'msr_value': row[3]
+            }]
 
     return my_dict
 
@@ -414,9 +436,9 @@ if __name__ == '__main__':
             # get_static_data("Australia", "population")
             # check_admin('yair', '12')
             # add_new_measurement_type("smoking")
-            # get_updates_for_display()
-            # user_update("Portugal", "2020-03-19", "new_cases", 100)
-            # user_update("Israel", "2020-03-20", "total_cases", 200)
+            # print(get_updates_for_display())
+            # user_update("China", "2021-10-19", "new_deaths", 700)
+            # user_update("Israel", "2021-07-22", "total_cases", 200)
             # confirm_user_update(
             #      [["Portugal", "2020-03-19", "new_cases", '100'], ["Israel", "2020-03-20", "total_cases", '200']])
 
