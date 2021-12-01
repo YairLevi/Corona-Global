@@ -167,14 +167,14 @@ def percentage_cases_out_of_total_population_in_each_continent():
                                     ORDER BY cases_precentage DESC
                                     """, connection)
 
-    countries_dict = {}
+    continent_dict = {}
     for row in results.values:
-        countries_dict[row[0]] = {
-            'total cases': row[1],
-            'total population': row[2],
-            'cases percentage': row[3]
+        continent_dict[row[0]] = {
+            'total_cases': row[1],
+            'total_population': row[2],
+            'cases_percentage': row[3]
         }
-    return countries_dict
+    return continent_dict
 
 
 # find the five countries with the highest human development index, and for each of them return the total deaths
@@ -233,11 +233,11 @@ def percentage_of_verified_deaths_out_of_total_cases():
     countries_dict = {}
     for row in results.values:
         countries_dict[row[0]] = {
-            'aged 70 older': row[1],
-            'total deaths': row[2],
+            'aged_70_older': row[1],
+            'total_deaths': row[2],
             'population': row[3],
-            'total cases': row[4],
-            'deaths percentage': row[5]
+            'total_cases': row[4],
+            'deaths_percentage': row[5]
         }
     return countries_dict
 
@@ -270,10 +270,10 @@ def percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_conti
                                         ) AS continental_cases) AS total_continental_cases
                                     ORDER BY percentage DESC
                                     """, connection)
-    countries_dict = {}
+    continent_dict = {}
     for row in results.values:
-        countries_dict[row[0]] = row[1]
-    return countries_dict
+        continent_dict[row[0]] = row[1]
+    return continent_dict
 
 
 # Queries for update:
@@ -416,7 +416,7 @@ if __name__ == '__main__':
         connection = mysql.connector.connect(host='localhost',
                                              database='covid-19 global data displayer',
                                              user='root',
-                                             password='your_password')  # put your MYSQL server password here.
+                                             password='put_your_password')  # put your MYSQL server password here.
 
         if connection.is_connected():
             db_Info = connection.get_server_info()
