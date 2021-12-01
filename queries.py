@@ -31,12 +31,12 @@ def get_variables() -> dict:
     var = []
     for row in dynamic_variables.values:
         var.append(row[0])
-    my_dict["dynamic variables"] = var
+    my_dict["dynamic_variables"] = var
 
     var = []
     for row in static_variables.values:
         var.append(row[0])
-    my_dict["static variables"] = var
+    my_dict["static_variables"] = var
 
     return my_dict
 
