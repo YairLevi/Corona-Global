@@ -1,13 +1,9 @@
 import mysql.connector
 import pandas as pd
 
-# Globals:
-connection = None
-cursor = None
-
 
 # return a dictionary that map each country to her continent and population.
-def get_countries() -> dict:
+def get_countries(connection) -> dict:
     results = pd.read_sql_query("""SELECT continent.continent_name, country.country_name, country.population 
                                     FROM continent,country
                                     where continent.PKcontinent_id = country.FKcontinent_id;""", connection)
@@ -21,7 +17,7 @@ def get_countries() -> dict:
 
 
 # return a dictionary of dynamic variables (msrtype table) and static variables.
-def get_variables() -> dict:
+def get_variables(connection) -> dict:
     dynamic_variables = pd.read_sql_query("""SELECT msr_name FROM msrtype;""", connection)
     static_variables = pd.read_sql_query("""SELECT population_density, median_age, aged_65_older, aged_70_older,
                                             gdp_per_capita, cardiovasc_death_rate, diabetes_prevalence, 
@@ -42,7 +38,7 @@ def get_variables() -> dict:
 
 
 # get the first and the last date in the DB.
-def get_dates() -> dict:
+def get_dates(connection) -> dict:
     first = pd.read_sql_query("""SELECT max(msr_timestamp) FROM measurement;""", connection)
     last = pd.read_sql_query("""SELECT min(msr_timestamp) FROM measurement;""", connection)
     my_dict = {'first_date': first, 'last_date': last}
@@ -50,7 +46,7 @@ def get_dates() -> dict:
 
 
 # given a date, return the new cases, new deaths, total cases, total deaths in this date.
-def get_map_variable(date) -> dict:
+def get_map_variable(connection, date) -> dict:
     dynamic_variables = pd.read_sql_query("""SELECT PKmsr_id, msr_name FROM msrtype;""", connection)
     my_dict = {}
     result_dict = {}
@@ -95,7 +91,7 @@ def get_map_variable(date) -> dict:
 
 # given a country and a variable, return a dictionary that maps msr_timestamp to the msr_value in each of the
 # timestamps that in the DB. 'variable' is a dynamic variable that his value takes from measurement table.
-def get_data_for_scatter_line_graph(country, variable) -> dict:
+def get_data_for_scatter_line_graph(connection, country, variable) -> dict:
     query = """SELECT msr_timestamp, msr_value
                FROM measurement
                where FKcountry_id = (select PKcountry_id FROM country where country_name LIKE "{0}") 
@@ -118,7 +114,7 @@ def get_data_for_scatter_line_graph(country, variable) -> dict:
 
 # given a country and a variable, return the value of this variable. 'variable' is a static variable
 # that takes from country table.
-def get_static_data(country, variable):
+def get_static_data(connection, cursor, country, variable):
     query = """SELECT {0}
                FROM country
                where PKcountry_id = (select PKcountry_id FROM country where country_name LIKE "{1}");"""
@@ -132,7 +128,7 @@ def get_static_data(country, variable):
 
 # return a dictionary that maps each continent to the total deaths from the first date
 # until the last date in the continent. This query will display as a column graph.
-def total_deaths_in_each_continent():
+def total_deaths_in_each_continent(connection):
     results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_deaths
                                     FROM measurement, country, msrtype, continent
                                     WHERE measurement.FKcountry_id = country.PKcountry_id
@@ -150,7 +146,7 @@ def total_deaths_in_each_continent():
 
 # percentage cases out of the total population in each continent, according to the last date in the DB.
 # This query will display as a column graph.
-def percentage_cases_out_of_total_population_in_each_continent():
+def percentage_cases_out_of_total_population_in_each_continent(connection, cursor):
     results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_cases,
                                     SUM(population) AS total_population, 
                                     100*SUM(msr_value)/SUM(population) AS cases_precentage
@@ -179,7 +175,7 @@ def percentage_cases_out_of_total_population_in_each_continent():
 
 # find the five countries with the highest human development index, and for each of them return the total deaths
 # until the last date in the DB. This query will display as a column graph.
-def total_deaths_of_top_five_human_development_index():
+def total_deaths_of_top_five_human_development_index(connection):
     results = pd.read_sql_query("""SELECT DISTINCT country.country_name, developed.human_development_index,
                                     developed.msr_value AS 'total_deaths'
                                     FROM (SELECT DISTINCT PKcountry_id, human_development_index, msr_value
@@ -202,7 +198,7 @@ def total_deaths_of_top_five_human_development_index():
 
 # Percentage of all verified deaths out of the total cases, in each of the 5 countries with the highest percentage of
 # the population over the age of 70 on the latest date in the DB.
-def percentage_of_verified_deaths_out_of_total_cases():
+def percentage_of_verified_deaths_out_of_total_cases(connection):
     results = pd.read_sql_query("""SELECT DISTINCT country.country_name, aged.aged_70_older, total_deaths, population, 
                                 measurement.msr_value AS total_cases, 
                                 100*total_deaths/measurement.msr_value AS deaths_percentage
@@ -244,7 +240,7 @@ def percentage_of_verified_deaths_out_of_total_cases():
 
 # Percentage of verified cases in each continent out of all the global verified cases at the latest date in the DB.
 # This query will display as Pie Chart.
-def percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent():
+def percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent(connection):
     results = pd.read_sql_query("""SELECT cases_per_continent.continent_name, 
                                     100*cases_per_continent.total_cases_continent/global_total_cases AS percentage
                                     FROM (
@@ -282,7 +278,7 @@ def percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_conti
 # We add this data to update table. This data will need to be approved later, by an admin.
 # The variable type, must be a type that exists in msrtype table. (the user can't add a new type of measurement).
 # Date format that this function get: '2020-02-24'.
-def user_update(country_name, date, variable, value):
+def user_update(connection, cursor, country_name, date, variable, value):
     country_id_query = """select PKcountry_id FROM country where country_name LIKE '{0}';"""
     country_id_query = country_id_query.format(country_name)
     country_id = pd.read_sql_query(country_id_query, connection).values[0][0]
@@ -303,7 +299,7 @@ def user_update(country_name, date, variable, value):
 
 # An admin wants to connect to the system, and we need to make sure he is one of the existing admins in the system.
 # If this admin exists in the DB return True, otherwise return False.
-def check_admin(admin_name, admin_password):
+def check_admin(connection, admin_name, admin_password):
     query = """SELECT EXISTS(select admin_name, admin_pwd
                 from admin
                 where admin_name = '{0}' and admin_pwd = '{1}')"""
@@ -318,7 +314,7 @@ def check_admin(admin_name, admin_password):
 
 
 # An existing admin wants to add a new measurement type. We add this type to msrtype table.
-def add_new_measurement_type(variable_name):
+def add_new_measurement_type(connection, cursor, variable_name):
     query = """INSERT INTO msrtype ({0}) VALUES (%s);"""
     query = query.format('msr_name')
     data = [variable_name]
@@ -331,7 +327,7 @@ def add_new_measurement_type(variable_name):
 # updates, that we will need to delete from update table, and add them to measurements table.
 # update_list[i] = (country_name, date, variable, value)
 # Note: Date format that this function get: '2020-02-24'.
-def confirm_user_update(update_list):
+def confirm_user_update(connection, cursor, update_list):
     for row in update_list:
         country_name = row[0]
         date = row[1]
@@ -367,7 +363,7 @@ def confirm_user_update(update_list):
 
 
 # Return amount of updates from the update table that will be display for the admin
-def get_updates_for_display() -> dict:
+def get_updates_for_display(connection) -> dict:
     amount_of_rows_in_table = pd.read_sql_query("""SELECT count(*) from measurement_update;""", connection).values[0][0]
     if amount_of_rows_in_table < 10:
         amount_of_updates_for_display = amount_of_rows_in_table
@@ -411,41 +407,41 @@ def get_updates_for_display() -> dict:
     return my_dict
 
 
-if __name__ == '__main__':
-    try:
-        connection = mysql.connector.connect(host='localhost',
-                                             database='covid-19 global data displayer',
-                                             user='root',
-                                             password='put_your_password')  # put your MYSQL server password here.
-
-        if connection.is_connected():
-            db_Info = connection.get_server_info()
-            print("Connected to MySQL Server version ", db_Info)
-            cursor = connection.cursor()
-            cursor.execute("select database();")
-            record = cursor.fetchone()
-            print("You're connected to database: ", record)
-
-            # total_deaths_in_each_continent()
-            # get_map_variable("2021-09-24")
-            # total_deaths_of_top_five_human_development_index()
-            # get_data_for_scatter_line_graph("Portugal", "new_cases")
-            # percentage_cases_out_of_total_population_in_each_continent()
-            # percentage_of_verified_deaths_out_of_total_cases()
-            # percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent()
-            # get_static_data("Australia", "population")
-            # check_admin('yair', '12')
-            # add_new_measurement_type("smoking")
-            # print(get_updates_for_display())
-            # user_update("China", "2021-10-19", "new_deaths", 700)
-            # user_update("Israel", "2021-07-22", "total_cases", 200)
-            # confirm_user_update(
-            #      [["Portugal", "2020-03-19", "new_cases", '100'], ["Israel", "2020-03-20", "total_cases", '200']])
-
-    except mysql.connector.Error as error:
-        print("Error in MySQL: {}".format(error))
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-            print("MySQL connection is closed")
+# if __name__ == '__main__':
+#     try:
+#         connection = mysql.connector.connect(host='localhost',
+#                                              database='covid-19 global data displayer',
+#                                              user='root',
+#                                              password='put_your_password')  # put your MYSQL server password here.
+#
+#         if connection.is_connected():
+#             db_Info = connection.get_server_info()
+#             print("Connected to MySQL Server version ", db_Info)
+#             cursor = connection.cursor()
+#             cursor.execute("select database();")
+#             record = cursor.fetchone()
+#             print("You're connected to database: ", record)
+#
+#             # total_deaths_in_each_continent()
+#             # get_map_variable("2021-09-24")
+#             # total_deaths_of_top_five_human_development_index()
+#             # get_data_for_scatter_line_graph("Portugal", "new_cases")
+#             # percentage_cases_out_of_total_population_in_each_continent()
+#             # percentage_of_verified_deaths_out_of_total_cases()
+#             # percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent()
+#             # get_static_data("Australia", "population")
+#             # check_admin('yair', '12')
+#             # add_new_measurement_type("smoking")
+#             # print(get_updates_for_display())
+#             # user_update("China", "2021-10-19", "new_deaths", 700)
+#             # user_update("Israel", "2021-07-22", "total_cases", 200)
+#             # confirm_user_update(
+#             #      [["Portugal", "2020-03-19", "new_cases", '100'], ["Israel", "2020-03-20", "total_cases", '200']])
+#
+#     except mysql.connector.Error as error:
+#         print("Error in MySQL: {}".format(error))
+#     finally:
+#         if connection.is_connected():
+#             cursor.close()
+#             connection.close()
+#             print("MySQL connection is closed")
