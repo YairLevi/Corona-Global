@@ -114,7 +114,7 @@ def get_data_for_scatter_line_graph(connection, country, variable) -> dict:
 
 # given a country and a variable, return the value of this variable. 'variable' is a static variable
 # that takes from country table.
-def get_static_data(connection, cursor, country, variable):
+def get_static_data(connection, country, variable):
     query = """SELECT {0}
                FROM country
                where PKcountry_id = (select PKcountry_id FROM country where country_name LIKE "{1}");"""
@@ -146,7 +146,7 @@ def total_deaths_in_each_continent(connection):
 
 # percentage cases out of the total population in each continent, according to the last date in the DB.
 # This query will display as a column graph.
-def percentage_cases_out_of_total_population_in_each_continent(connection, cursor):
+def percentage_cases_out_of_total_population_in_each_continent(connection):
     results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_cases,
                                     SUM(population) AS total_population, 
                                     100*SUM(msr_value)/SUM(population) AS cases_precentage
