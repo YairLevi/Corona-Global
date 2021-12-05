@@ -44,8 +44,8 @@ def change_date_format(date):
 
 # get the first and the last date in the DB.
 def get_dates(connection) -> dict:
-    first = pd.read_sql_query("""SELECT max(msr_timestamp) FROM measurement;""", connection).values[0][0]
-    last = pd.read_sql_query("""SELECT min(msr_timestamp) FROM measurement;""", connection).values[0][0]
+    last = pd.read_sql_query("""SELECT max(msr_timestamp) FROM measurement;""", connection).values[0][0]
+    first = pd.read_sql_query("""SELECT min(msr_timestamp) FROM measurement;""", connection).values[0][0]
 
     my_dict = {'first_date': change_date_format(first), 'last_date': change_date_format(last)}
     return my_dict
