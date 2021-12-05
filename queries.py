@@ -19,29 +19,35 @@ def get_countries(connection) -> dict:
 # return a dictionary of dynamic variables (msrtype table) and static variables.
 def get_variables(connection) -> dict:
     dynamic_variables = pd.read_sql_query("""SELECT msr_name FROM msrtype;""", connection)
-    static_variables = pd.read_sql_query("""SELECT population_density, median_age, aged_65_older, aged_70_older,
-                                            gdp_per_capita, cardiovasc_death_rate, diabetes_prevalence, 
-                                            hospital_beds_per_thousand,life_expectancy,human_development_index 
-                                            FROM country;""", connection)
+
     my_dict = {}
     var = []
     for row in dynamic_variables.values:
         var.append(row[0])
     my_dict["dynamic_variables"] = var
 
-    var = []
-    for row in static_variables.values:
-        var.append(row[0])
+    var = ['population_density', 'median_age', 'aged_65_older', 'aged_70_older',
+           'gdp_per_capita', 'cardiovasc_death_rate', 'diabetes_prevalence',
+           'hospital_beds_per_thousand', 'life_expectancy', 'human_development_index']
     my_dict["static_variables"] = var
 
     return my_dict
 
 
+def change_date_format(date):
+    if date.month < 10:
+        date = "{0}-0{1}-{2}".format(date.year, date.month, date.day)
+    else:
+        date = "{0}-{1}-{2}".format(date.year, date.month, date.day)
+    return date
+
+
 # get the first and the last date in the DB.
 def get_dates(connection) -> dict:
-    first = pd.read_sql_query("""SELECT max(msr_timestamp) FROM measurement;""", connection)
-    last = pd.read_sql_query("""SELECT min(msr_timestamp) FROM measurement;""", connection)
-    my_dict = {'first_date': first, 'last_date': last}
+    first = pd.read_sql_query("""SELECT max(msr_timestamp) FROM measurement;""", connection).values[0][0]
+    last = pd.read_sql_query("""SELECT min(msr_timestamp) FROM measurement;""", connection).values[0][0]
+
+    my_dict = {'first_date': change_date_format(first), 'last_date': change_date_format(last)}
     return my_dict
 
 
@@ -422,6 +428,7 @@ def get_updates_for_display(connection) -> dict:
 #             record = cursor.fetchone()
 #             print("You're connected to database: ", record)
 #
+#             # print(get_variables())
 #             # total_deaths_in_each_continent()
 #             # get_map_variable("2021-09-24")
 #             # total_deaths_of_top_five_human_development_index()
