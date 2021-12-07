@@ -8,12 +8,12 @@ class Queries:
         self.__connection = None
         self.__cursor = None
 
-    def connect(self):
+    def connect(self, password):
         try:
             self.__connection = mysql.connector.connect(host='localhost',
                                                         database='covid-19 global data displayer',
                                                         user='root',
-                                                        password=sys.argv[1])  # put your MYSQL server password here.
+                                                        password=password)  # put your MYSQL server password here.
 
             if self.__connection.is_connected():
                 db_Info = self.__connection.get_server_info()
