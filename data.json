@@ -1,0 +1,24 @@
+{
+    "total_cases": [
+        {
+            "date": "2020-3-1",
+            "status": {
+                "USA": 100,
+                "ISR": 20
+            }
+        },
+        {
+            "date": "2020-3-2",
+            "status": {
+                "USA": 120,
+                "ISR": 30
+            }
+        }
+    ],
+    "total_cases_per_million": [
+    ],
+    "total_deaths": [
+    ],
+    "total_deaths_per_million":[
+    ]
+}
