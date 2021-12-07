@@ -2,6 +2,7 @@ import csv
 import mysql.connector
 import pandas as pd
 import os
+import sys
 
 
 # Given a cursor, a db_table_name, and q query --> Check if there is a table in the DB with 'db_table_name' name
@@ -142,7 +143,7 @@ if __name__ == '__main__':
         connection = mysql.connector.connect(host='localhost',
                                              database='covid-19 global data displayer',
                                              user='root',
-                                             password='your_password')  # put your MYSQL server password here.
+                                             password=sys.argv[1])  # put your MYSQL server password here.
         if connection.is_connected():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
