@@ -7,10 +7,15 @@ Stay up-to-date with the latest COVID-19 statistics, with an interactive and inf
 * Download MySQL Workbench at https://dev.mysql.com/downloads/workbench/
 Make sure both are ready to go when moving to the next part.
 
+### Libraries
+This application is using various libraries, which need to be installed.
+* You can open ```server.py``` from PyCharm or any other IDE, and install the libraries there.
+* If you have PIP on your machine, you can run ```dependencies.bat``` which will install everything for you.
+
 ### First Run
 1. Open MySQL Workbench and create a new Schema called ```covid-19 global data displayer```.
-2. Run [](connection.py) using ```py connection.py```. It might take a few minutes.
-3. Run ```py server.py password``` to run the server, where ```password``` is the password for the MySQL account you created when installing the server. 
+2. Run ```py connection.py password```,  where ```password``` is the password for the MySQL account you created when installing the server. It might take a few minutes.
+3. Run ```py server.py password``` to run the server. Again, insert your password.
 4. Access the application at ```http://localhost:8000```.
 
 ### Important Notes
