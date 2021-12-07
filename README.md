@@ -5,6 +5,7 @@ Stay up-to-date with the latest COVID-19 statistics, with an interactive and inf
 ### Requirements
 * Download MySQL Server at https://dev.mysql.com/downloads/mysql/
 * Download MySQL Workbench at https://dev.mysql.com/downloads/workbench/
+When required to create an account, set the username to be ```root```.
 Make sure both are ready to go when moving to the next part.
 
 ### Libraries
