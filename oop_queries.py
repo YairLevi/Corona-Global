@@ -1,5 +1,6 @@
 import mysql.connector
 import pandas as pd
+import sys
 
 
 class Queries:
@@ -12,7 +13,7 @@ class Queries:
             self.__connection = mysql.connector.connect(host='localhost',
                                                         database='covid-19 global data displayer',
                                                         user='root',
-                                                        password='240301Yl')  # put your MYSQL server password here.
+                                                        password=sys.argv[1])  # put your MYSQL server password here.
 
             if self.__connection.is_connected():
                 db_Info = self.__connection.get_server_info()
@@ -24,11 +25,6 @@ class Queries:
 
         except mysql.connector.Error as error:
             print("Error in connect: {}".format(error))
-        # finally:
-        #     if self.__connection.is_connected():
-        #         self.__cursor.close()
-        #         self.__connection.close()
-        #         print("MySQL connection is closed")
 
     def close(self):
         if self.__connection.is_connected():

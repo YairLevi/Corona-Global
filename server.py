@@ -1,182 +1,90 @@
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import json
-import q
+import oop_queries
+import mysql.connector
+import pandas
+import sys
 
 encoding = 'utf-8'
 
-def getIndex(server: SimpleHTTPRequestHandler, path: str):
-    with open('index.html', 'r') as file:
-        content = file.read()
-        server.wfile.write(bytes(content, encoding))
-    file.close()
+def countries(params):
+    return queries.get_countries()
 
-def get_countries(server: SimpleHTTPRequestHandler, path: str):
-    j = {
-        "United States": {
-            "continent": "America",
-            "population": 300000000
-        },
-        "Israel": {
-            "continent": "Asia",
-            "population": 3000000
-        },
-        "Spain": {
-            "continent": "Europe",
-            "population": 90000000
-        }
-    }
-    countriesDict = json.dumps(j)
-    server.wfile.write(bytes(countriesDict, encoding))
+def variables(params):
+    return queries.get_variables()
 
-def get_variables(server: SimpleHTTPRequestHandler, path: str):
-    j = {
-        "dynamic_variables": ["total_deaths", "new_deaths", "total_cases", "new_cases", "stringency"],
-        "static_variables": ["population", "gdp"]
-    }
-    variableDict = json.dumps(j)
-    server.wfile.write(bytes(variableDict, encoding))
+def dates(params):
+    return queries.get_dates()
 
-def get_dates(server: SimpleHTTPRequestHandler, path: str):
-    j = {
-        "first_date": "2020-3-1",
-        "last_date": "2020-3-3"
-    }
-    datesDict = json.dumps(j)
-    server.wfile.write(bytes(datesDict, encoding))
+def map_variables(params):
+    return {'new_cases':1,'total_cases':1,'new_deaths':1,'total_deaths':1}
 
-def get_map_variable(server: SimpleHTTPRequestHandler, path: str):
-    j = {
-        "total_deaths": 1000,
-        "total_cases": 5000,
-        "new_deaths": 10,
-        "new_cases": 50,
-    }
-    dict = json.dumps(j)
-    server.wfile.write(bytes(dict, encoding))
+def dynamic_var(params):
+    return queries.get_data_for_scatter_line_graph(params['country'], params['variable'])
 
-def get_data_for_scatter_line_graph(server: SimpleHTTPRequestHandler, path: str):
-    if path[-2] == 'y':
-        j = {
-            "2020-03-01": 120,
-            "2020-03-02": 230,
-            "2020-03-03": 20,
-        }
-    else:
-        j = {
-            "2020-03-01": 10,
-            "2020-03-02": 30,
-            "2020-03-03": 60,
-        }
-    dict = json.dumps(j)
-    server.wfile.write(bytes(dict, encoding))
+def static_var(params):
+    dict = {}
+    val = queries.get_static_data(params['country'], params['variable'])
+    for date in pandas.date_range(end_dates['first_date'], end_dates['last_date'], freq='d'):
+        date_format = date.strftime('%Y-%m-%d')
+        dict[date_format] = val
+    return dict
 
-def get_static_data():
-    f = 100
-    j = {
-        "value": f,
-    }
-    dict = json.dumps(j)
-    server.wfile.write(bytes(dict, encoding))
+def total_deaths_in_each_continent(params):
+    return queries.total_deaths_in_each_continent()
 
-def total_deaths_in_each_continent():
-    j = {
-        "America": 100,
-        "Asia": 100,
-        "Europe": 100,
-        "Africa": 100,
-        "Australia": 100,
-    }
-    dict = json.dumps(j)
-    server.wfile.write(bytes(dict, encoding))
+def percentage_cases_out_of_total_population_in_each_continent(params):
+    return queries.percentage_cases_out_of_total_population_in_each_continent()
 
-def percentage_cases_out_of_total_population_in_each_continent():
-    j = {
-        "America": {
-            "total_cases": 0,
-            "total_population": 0,
-            "cases_percentage": 100,
-        },
-        "Asia": 50,
-        "Europe": 20,
-        "Africa": 80,
-        "Australia": 90,
-    }
-    dict = json.dumps(j)
-    server.wfile.write(bytes(dict, encoding))
+def total_deaths_of_top_five_human_development_index(params):
+    return queries.total_deaths_of_top_five_human_development_index()
 
-def total_deaths_of_top_five_human_development_index():
-    j = {
-        "United States": {
-            "human_development_index": 100,
-            "total_deaths": 200,
-        },
-        "Israel": {
-            "human_development_index": 100,
-            "total_deaths": 200,
-        },
-        "Spain": {
-            "human_development_index": 100,
-            "total_deaths": 200,
-        }
-    }
-    dict = json.dumps(j)
-    server.wfile.write(bytes(dict, encoding))
+def percentage_of_verified_deaths_out_of_total_cases(params):
+    return queries.percentage_of_verified_deaths_out_of_total_cases()
 
+def percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent(params):
+    return queries.percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent()
 
+def check_admin(params):
+    return {'is_admin' : queries.check_admin(params['username'], params['password'])}
 
+def get_update_requests(params):
+    return queries.get_updates_for_display()
 
+def send_update(params):
+    queries.user_update(params['country'], params['date'], params['variable'], params['value'])
 
+def add_msr(params):
+    queries.add_new_measurement_type(params['msr'])
 
-def getColumnData(server: SimpleHTTPRequestHandler, path: str):
-    j = {
-        "2020-3-1": {
-            "United States": 1000,
-            "Israel": 700,
-            "A": 100,
-            "b": 100,
-            "h": 100,
-            "g": 100,
-            "e": 100,
-            "m": 100,
-            "n": 100,
-        },
-        "2020-3-2": {
-            "United States": 1300,
-            "Israel": 200,
-            "A": 100,
-            "b": 100,
-            "h": 100,
-            "g": 100,
-            "e": 100,
-            "m": 100,
-            "n": 100,
-        },
-        "2020-3-3": {
-            "United States": 500,
-            "Israel": 1200,
-            "A": 200,
-            "b": 0,
-            "h": -100,
-            "g": 10,
-        }
-    }
-    dict = json.dumps(j)
-    server.wfile.write(bytes(dict, encoding))
+def approve(params):
+    queries.confirm_user_update([[params['country'], params['date'], params['variable'], params['value']]])
 
-def ignore(server: SimpleHTTPRequestHandler, path: str):pass
+def deny(params):
+    queries.reject_user_update([[params['country'], params['date'], params['variable'], params['value']]])
 
 routes_GET = {
-    '/favicon.ico': ignore,
-    '/': getIndex,
-    '/countries': get_countries,
-    '/variables': get_variables,
-    '/dates': get_dates,
-    '/map': get_map_variable,
-    '/graph/line': get_data_for_scatter_line_graph,
-    '/graph/column': getColumnData,
+    '/countries': countries,
+    '/variables': variables,
+    '/dates': dates,
+    '/map': map_variables,
+    '/var/dynamic': dynamic_var,
+    '/var/static': static_var,
+    '/case_percentage_population': percentage_cases_out_of_total_population_in_each_continent,
+    '/case_percentage_global': percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent,
+    '/death_percentage': percentage_of_verified_deaths_out_of_total_cases,
+    '/admin': check_admin,
+    '/updates': get_update_requests,
+    '/update': send_update,
+    '/addmsr': add_msr,
+    '/approve': approve,
+    '/deny': deny,
 }
 
 class Server(SimpleHTTPRequestHandler):
+
+    def __init__(self, request: bytes, client_address, server):
+        super().__init__(request, client_address, server)
 
     def _set_headers(self):
         self.send_response(200)
@@ -185,22 +93,8 @@ class Server(SimpleHTTPRequestHandler):
     def do_HEAD(self):
         self._set_headers()
 
-    def do_GET(self):
-        self._set_headers()
-        if self.path == '/favicon.ico': return
-        if self.path == '/': self.path = '/index.html'
-        try :print(f"------\n{self.get_query_params(self.path.split('?')[1])}\n------")
-        except: pass
-        try:
-            routes_GET[self.path.split('?')[0]](self, self.path)
-        except:
-            with open(self.path[1:], 'rb') as f:
-                content = f.read()
-                f.close()
-            self.wfile.write(content)
-
-
     def get_query_params(self, string):
+        string = string.replace('%20', ' ')
         params = string.split('&')
         pDict = {}
         for p in params:
@@ -209,7 +103,29 @@ class Server(SimpleHTTPRequestHandler):
             pDict[pair[0]] = pair[1]
         return pDict
 
+    def do_GET(self):
+        self._set_headers()
+        if self.path == '/favicon.ico': return
+        if self.path == '/': self.path = '/index.html'
+        params = {}
+        if '?' in self.path:
+            l = self.path.split('?')
+            self.path = l[0]
+            params = self.get_query_params(l[1])
+        try:
+            g = routes_GET[self.path](params)
+            print(g)
+            data = json.dumps(g)
+            self.wfile.write(bytes(data, encoding))
+        except:
+            with open(self.path[1:], 'rb') as f:
+                content = f.read()
+                f.close()
+            self.wfile.write(content)
 
-print('Server is running')
+queries = oop_queries.Queries()
+queries.connect()
+end_dates = dates({})
 httpServer = HTTPServer(('localhost', 8000), Server)
+print('Server is running at http://localhost:8000/')
 httpServer.serve_forever()
