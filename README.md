@@ -10,7 +10,8 @@ Make sure both are ready to go when moving to the next part.
 ### First Run
 1. Open MySQL Workbench and create a new Schema called ```covid-19 global data displayer```.
 2. Run [](connection.py) using ```py connection.py```. It might take a few minutes.
-3. Run ```py server.py``` to run the server, and access the application at ```http://localhost:8000```.
+3. Run ```py server.py password``` to run the server, where ```password``` is the password for the MySQL account you created when installing the server. 
+4. Access the application at ```http://localhost:8000```.
 
 ### Important Notes
 * From now on, to use the application you should only run ```py server.py```.
