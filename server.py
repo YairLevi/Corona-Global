@@ -17,7 +17,7 @@ def dates(params):
     return queries.get_dates()
 
 def map_variables(params):
-    return {'new_cases':1,'total_cases':1,'new_deaths':1,'total_deaths':1}
+    return queries.get_map_variable(params['date'])
 
 def dynamic_var(params):
     return queries.get_data_for_scatter_line_graph(params['country'], params['variable'])
@@ -58,10 +58,10 @@ def add_msr(params):
     queries.add_new_measurement_type(params['msr'])
 
 def approve(params):
-    queries.confirm_user_update([[params['country'], params['date'], params['variable'], params['value']]])
+    return queries.confirm_user_update([[params['country'], params['date'], params['variable'], params['value']]])
 
 def deny(params):
-    queries.reject_user_update([[params['country'], params['date'], params['variable'], params['value']]])
+    return queries.reject_user_update([[params['country'], params['date'], params['variable'], params['value']]])
 
 routes_GET = {
     '/countries': countries,
@@ -114,7 +114,6 @@ class Server(SimpleHTTPRequestHandler):
             params = self.get_query_params(l[1])
         try:
             g = routes_GET[self.path](params)
-            print(g)
             data = json.dumps(g)
             self.wfile.write(bytes(data, encoding))
         except:

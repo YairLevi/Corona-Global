@@ -132,12 +132,17 @@ function createRow(values) {
 }
 
 async function approveRequest(values) {
-    await fetchData('approve', {
+    let result = await fetchData('approve', {
         country: values[0],
         date: values[1],
         variable: values[2],
         value: values[3],
     })
+    if (result['isFound']) {
+        showPopup('updated', 'Action Succeeded')
+    } else {
+        showPopup('updated', 'Failed. Query has been taken care of.')
+    }
     generateTable()
 }
 
@@ -148,5 +153,10 @@ async function denyRequest(values) {
         variable: values[2],
         value: values[3],
     })
+    if (result['isFound']) {
+        showPopup('updated', 'Action Succeeded')
+    } else {
+        showPopup('updated', 'Failed. Query has been taken care of.')
+    }
     generateTable()
 }

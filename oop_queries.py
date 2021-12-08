@@ -447,10 +447,14 @@ class Queries:
                 self.__connection.commit()
 
                 print("delete row from measurement_update table and add this row to measurement table, successfully")
-
+            return {'isFound': True}
         except mysql.connector.Error as error:
             print("Error in confirm_user_update: {}".format(error))
             self.close()
+
+        except IndexError:
+            return {'isFound':False}
+
 
     # Return amount of updates from the update table that will be display for the admin
     def get_updates_for_display(self) -> dict:
@@ -523,7 +527,10 @@ class Queries:
                 query = query.format(country_name, date, msr_name, msr_value)
                 self.__cursor.execute(query)
                 self.__connection.commit()
-
+            return {'isFound':True}
         except mysql.connector.Error as error:
             print("Error in reject_user_update: {}".format(error))
             self.close()
+
+        except IndexError:
+            return {'isFound': False}

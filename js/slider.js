@@ -43,11 +43,9 @@ datesData.then(data => {
     fetchData('map', {date:toSend}).then(data => updateButtons(data))
 })
 
-function onSlide(event) {
+function onMouseUp(event) {
     if (dates !== undefined) {
-        let date = dates[Math.floor((dates.length - 1) * event.target.start)]
-        if (date === currentDate.date) return
-        currentDate.setDate(date)
+        let date = currentDate.getDate()
         let month = monthNames[date.getMonth()]
         let day = date.getDate().toString()
         let year = date.getFullYear()
@@ -63,4 +61,17 @@ function onSlide(event) {
     }
 }
 
-slider.events.on('rangechanged', onSlide)
+function onRangeChanged(event) {
+    if (dates !== undefined) {
+        let date = dates[Math.floor((dates.length - 1) * event.target.start)]
+        if (date === currentDate.date) return
+        currentDate.setDate(date)
+        let month = monthNames[date.getMonth()]
+        let day = date.getDate().toString()
+        let year = date.getFullYear()
+        label.text = `Date: ${month} ${day}, ${year}`
+    }
+}
+
+slider.events.on('rangechanged', onRangeChanged)
+slider.events.on('up', onMouseUp)

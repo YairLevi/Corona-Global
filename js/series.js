@@ -276,9 +276,9 @@ class ColumnChart {
 class SpecialChart {
     constructor() {
         this.charts = [
-            'Deaths: ',
-            'Infected Percentage Of Population Per Continent',
-            'Total Deaths In Top 5 Most Progressive Countries',
+            'Infected to Population Ratio Per Continent',
+            'Infected to Global Population Ratio',
+            'The Most Aged Countries And Their Death Ratio',
         ]
         this.lastShown = undefined
         this.buttons = []
@@ -445,9 +445,9 @@ class SpecialChart {
         var deaths_percent = chart3D.series.push(new am4charts.ColumnSeries3D());
         deaths_percent.dataFields.valueY = "deaths";
         deaths_percent.dataFields.categoryX = "country";
-        deaths_percent.name = "Case Percentage";
+        deaths_percent.name = "Deaths Percentage";
         deaths_percent.clustered = false;
-        deaths_percent.columns.template.tooltipText = "{name}: {valueY}";
+        deaths_percent.columns.template.tooltipText = "{name}: {valueY}%";
         deaths_percent.columns.template.fillOpacity = 0.9;
         deaths_percent.fill = '#1187aa'
         deaths_percent.columns.template.tooltipX = am4core.percent(50);
@@ -457,9 +457,9 @@ class SpecialChart {
         var aged70 = chart3D.series.push(new am4charts.ColumnSeries3D());
         aged70.dataFields.valueY = "aged70orAbove";
         aged70.dataFields.categoryX = "country";
-        aged70.name = "Population";
+        aged70.name = "Population over 70";
         aged70.clustered = false;
-        aged70.columns.template.tooltipText = "{name} (Factor of 500m)\n{valueY}";
+        aged70.columns.template.tooltipText = "{name}: {valueY}%";
         aged70.fill = '#11d2dd'
         aged70.columns.template.tooltipX = am4core.percent(50);
         aged70.columns.template.tooltipY = am4core.percent(25);
