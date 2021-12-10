@@ -435,7 +435,8 @@ class SpecialChart {
                         deaths: data[cont]['deaths_percentage'],
                         population: data[cont]['total_population'] / 500000000,
                         aged70orAbove: data[cont]['aged_70_older'],
-                        total_cases: data[cont]['total_cases']
+                        total_cases: data[cont]['total_cases'],
+                        total_deaths: data[cont]['total_deaths']
                     })
                 }
                 chart3D.data = d
@@ -447,7 +448,7 @@ class SpecialChart {
         deaths_percent.dataFields.categoryX = "country";
         deaths_percent.name = "Deaths Percentage";
         deaths_percent.clustered = false;
-        deaths_percent.columns.template.tooltipText = "{name}: {valueY}%";
+        deaths_percent.columns.template.tooltipText = "{name}: {valueY}%\n(total: {total_deaths})";
         deaths_percent.columns.template.fillOpacity = 0.9;
         deaths_percent.fill = '#1187aa'
         deaths_percent.columns.template.tooltipX = am4core.percent(50);
