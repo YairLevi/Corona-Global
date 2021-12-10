@@ -67,7 +67,9 @@ async function updateValue() {
 
     if (!is_valid_datalist_value('countries', country)) {
         text = 'Invalid Country'
-    } else if (date === '') {
+    } else if (new Date(date) > new Date(endDates['last_date'])
+        || new Date(date) < new Date(endDates['first_date'])
+        || date === '') {
         text = 'Invalid Date'
 
     } else if (!is_valid_datalist_value('dynamic-variables', variable)) {
