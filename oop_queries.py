@@ -156,10 +156,7 @@ class Queries:
             # country, and given variable.
             country_info = {}
             for row in results.values:
-                if row[0].month < 10:
-                    date = "{0}-0{1}-{2}".format(row[0].year, row[0].month, row[0].day)
-                else:
-                    date = "{0}-{1}-{2}".format(row[0].year, row[0].month, row[0].day)
+                date = self.change_date_format(row[0])
                 country_info[date] = row[1]
 
             return country_info
@@ -416,28 +413,19 @@ class Queries:
     def confirm_user_update(self, update_list):
         try:
             for row in update_list:
-                country_name = row[0]
-                date = row[1]
-                msr_name = row[2]
-                msr_value = row[3]
+                country_name, date, msr_name, msr_value = row[0], row[1], row[2], row[3]
+
                 query = """select FKcountry_id,msr_timestamp,FKmsr_id,msr_value 
                 from measurement_update where FKcountry_id = (select PKcountry_id from country where country_name = '{0}')
-                 and msr_timestamp = '{1}'
-                 and FKmsr_id = (select PKmsr_id from msrtype where msr_name = '{2}') and msr_value = {3};"""
+                 and msr_timestamp = '{1}' and FKmsr_id = (select PKmsr_id from msrtype where msr_name = '{2}') 
+                 and msr_value = {3};"""
+
                 query = query.format(country_name, date, msr_name, msr_value)
                 row = pd.read_sql_query(query, self.__connection).values[0]
 
-                # add row to measurement table:
-                columns = ['FKcountry_id', 'msr_timestamp', 'FKmsr_id', 'msr_value']
-                query = """INSERT INTO measurement ({0}) VALUES (%s, %s, %s, %s);"""
-                query = query.format(','.join(columns))
-                if row[1].month < 10:
-                    date = "{0}-0{1}-{2}".format(row[1].year, row[1].month, row[1].day)
-                else:
-                    date = "{0}-{1}-{2}".format(row[1].year, row[1].month, row[1].day)
-                data = [row[0], date, row[2], row[3]]
-                self.__cursor.execute(query, data)
-                self.__connection.commit()
+                # add this row to measurement table:
+                date = self.change_date_format(row[1])
+                self.update_measurements_table(row[0], date, row[2], row[3])
 
                 # delete this row from measurement_update table:
                 query = """delete from measurement_update where FKcountry_id = {0} and msr_timestamp = '{1}'
@@ -445,16 +433,106 @@ class Queries:
                 query = query.format(row[0], date, row[2], row[3])
                 self.__cursor.execute(query)
                 self.__connection.commit()
-
                 print("delete row from measurement_update table and add this row to measurement table, successfully")
+
             return {'isFound': True}
-        except mysql.connector.Error as error:
+        except Exception as error:
             print("Error in confirm_user_update: {}".format(error))
             self.close()
 
         except IndexError:
-            return {'isFound':False}
+            return {'isFound': False}
 
+    # Update the given measurement in the measurement table --> check if we need to update an existing measurement,
+    # or if we have to insert a new measurement. After that, we check if we update a measurement that correlated to
+    # 'new_cases', 'new_deaths', 'total_cases', 'total_deaths' --> and if so, we have to update the next measurements
+    # in the measurement table.
+    # For example, if we update a measurement: ['Israel', '2020-02-24', 'new cases', '100'],
+    # and the previous measurement was - ['Israel', '2020-02-24', 'new cases', '50'], than we updated the value
+    # of the daily amount of cases in '2020-02-24' , but note that the total number of cases has increased by 50,
+    # so the total cases in the other measurements from the date we updated to the last date that the
+    # country measured the total cases must also increase by 50.
+    # Note: If the variable of the update is not 'new_cases', 'new_deaths', 'total_cases', 'total_deaths',
+    # then we update the specific measurement and finish.
+    def update_measurements_table(self, country_id, date, msr_id, value):
+        try:
+            variable = pd.read_sql_query("""select msr_name from msrtype where PKmsr_id = {}""".format(msr_id),
+                                         self.__connection).values[0][0]
+            query = """SELECT EXISTS (select 1 
+                               from measurement 
+                               where msr_timestamp = '{0}' 
+                               and FKcountry_id = {1}
+                               and FKmsr_id = {2});"""
+            query = query.format(date, country_id, msr_id)
+            last_value = 0
+
+            if not pd.read_sql_query(query, self.__connection).values[0]:
+                print("add a new measurement!")
+                query = """INSERT INTO measurement ({0}) VALUES (%s, %s, %s, %s);"""
+                columns = ['FKcountry_id', 'msr_timestamp', 'FKmsr_id', 'msr_value']
+                query = query.format(','.join(columns))
+                data = [str(country_id), date, str(msr_id), str(value)]
+                self.__cursor.execute(query, data)
+                self.__connection.commit()
+            else:
+                print("update an existing measurement!")
+                # get the last msr value:
+                if variable in ['new_cases', 'new_deaths', 'total_cases', 'total_deaths']:
+                    last_value_query = """select msr_value from measurement where FKcountry_id = {0} and FKmsr_id = {1} 
+                                                  and msr_timestamp = '{2}';"""
+                    last_value_query = last_value_query.format(country_id, msr_id, date)
+                    last_value = pd.read_sql_query(last_value_query, self.__connection).values[0][0]
+
+                query = """update measurement set msr_value = {0} where msr_timestamp = '{1}' 
+                                               and FKcountry_id = {2}
+                                               and FKmsr_id = {3};"""
+                query = query.format(value, date, country_id, msr_id)
+                self.__cursor.execute(query)
+                self.__connection.commit()
+
+            print("Insert an update for measurement table successfully")
+
+            if variable not in ['new_cases', 'new_deaths', 'total_cases', 'total_deaths']:
+                return
+
+            # update the next measurements - from the given date until the last date in the DB:
+            msr_id_query = """"""
+            last_date = self.get_dates()['last_date']
+            if variable in ['new_cases', 'total_cases']:
+                msr_id_query = """select PKmsr_id FROM msrtype WHERE msr_name = 'total_cases';"""
+            elif variable in ['new_deaths', 'total_deaths']:
+                msr_id_query = """select PKmsr_id FROM msrtype WHERE msr_name = 'total_deaths';"""
+
+            msr_id = pd.read_sql_query(msr_id_query, self.__connection).values[0][0]
+
+            if variable in ['total_cases', 'total_deaths']:
+                query = """SELECT DATE_ADD('{}', INTERVAL 1 DAY);""".format(date)
+                date = pd.read_sql_query(query, self.__connection).values[0][0]
+
+            self.update_next_measurements(date, last_date, country_id, msr_id, (value - last_value))
+
+        except Exception as error:
+            print("Error in user_update: {}".format(error))
+            self.close()
+
+    # After inserting to measurement table --> update the next measurements -
+    # from the given date until the last date in the DB.
+    # We update the next measurements of the given variable with the given value.
+    def update_next_measurements(self, current_date, last_date, country_id, msr_id, value):
+        try:
+            new_value = "msr_value + {0}"
+            new_value = new_value.format(value)
+            print(new_value)
+
+            query = """update measurement set msr_value = {0} 
+                       where FKcountry_id = {1} and FKmsr_id = {2} and msr_timestamp between '{3}' and '{4}';"""
+            query = query.format(new_value, country_id, msr_id, current_date, last_date)
+            self.__cursor.execute(query)
+            self.__connection.commit()
+
+        except Exception as error:
+            print("Error in update_next_measurements: {}".format(error))
+            self.close()
 
     # Return amount of updates from the update table that will be display for the admin
     def get_updates_for_display(self) -> dict:
@@ -477,10 +555,7 @@ class Queries:
 
             my_dict = {}
             for row in results.values:
-                if row[1].month < 10:
-                    date = "{0}-0{1}-{2}".format(row[1].year, row[1].month, row[1].day)
-                else:
-                    date = "{0}-{1}-{2}".format(row[1].year, row[1].month, row[1].day)
+                date = self.change_date_format(row[1])
 
                 # my_dict[country] = [dict1, dict2, ... , dict_k]
                 # (if this country has k measurement's updates in the DB).
@@ -513,10 +588,7 @@ class Queries:
     def reject_user_update(self, update_list):
         try:
             for row in update_list:
-                country_name = row[0]
-                date = row[1]
-                msr_name = row[2]
-                msr_value = row[3]
+                country_name, date, msr_name, msr_value = row[0], row[1], row[2], row[3]
 
                 # delete this row from measurement_update table:
                 query = """delete from measurement_update 
@@ -527,10 +599,34 @@ class Queries:
                 query = query.format(country_name, date, msr_name, msr_value)
                 self.__cursor.execute(query)
                 self.__connection.commit()
-            return {'isFound':True}
+            return {'isFound': True}
         except mysql.connector.Error as error:
             print("Error in reject_user_update: {}".format(error))
             self.close()
 
         except IndexError:
             return {'isFound': False}
+
+    # # For example: if we have a country that the last measurement of 'new_cases' was in date 'x' and
+    # # this country didn't measure 'total cases' from date 'x' until the last date in the DB -->
+    # # we must add another measurement of 'total_cases' in date x that equals to the last value of
+    # # 'total cases' (that this country measure in date <= 'x-1') + the 'new_cases' in the date 'x'.
+    # # Exactly the same procedure for updating the amount of dead daily.
+    # def check_for_adding_another_measurement(self, current_date, last_date, country_id, msr_id, value):
+    #     try:
+    #         query = """select count(msr_timestamp) from measurement
+    #                     where FKcountry_id = {0} and FKmsr_id = {1}
+    #                     and msr_timestamp between '{2}' and '{3}';""".format(current_date,last_date,country_id,msr_id)
+    #         if pd.read_sql_query(query,self.__connection).values[0]
+    #     except Exception as error:
+    #         print("Error in check_for_adding_another_measurement: {}".format(error))
+    #         self.close()
+
+
+# if __name__ == '__main__':
+#     q = Queries()
+#     q.connect('password')
+#     # q.add_new_measurement_type("smoking")
+#     q.user_update("Israel", "2021-03-19", "total_cases", 1500)
+#     q.confirm_user_update([["Israel", "2021-03-19", "total_cases", 1500]])
+#     q.close()
