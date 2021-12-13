@@ -2,6 +2,7 @@ import csv
 import mysql.connector
 import pandas as pd
 import os
+import sys
 
 
 # Given a cursor, a db_table_name, and q query --> Check if there is a table in the DB with 'db_table_name' name
@@ -131,6 +132,7 @@ def add_trigger_to_measurements_table(my_cursor, my_connection):
 
 def add_indices_to_measurements_table(my_cursor, my_connection):
     my_cursor.execute("CREATE INDEX searchIndex ON measurement(msr_timestamp, FKmsr_id, msr_value);")
+    my_cursor.execute("""create index mapIndex on measurement(msr_timestamp, FKmsr_id, FKcountry_id);""")
     my_connection.commit()
 
 
@@ -142,7 +144,7 @@ if __name__ == '__main__':
         connection = mysql.connector.connect(host='localhost',
                                              database='covid-19 global data displayer',
                                              user='root',
-                                             password='your_password')  # put your MYSQL server password here.
+                                             password='put_your_password')  # put your MYSQL server password here.
         if connection.is_connected():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
@@ -199,7 +201,7 @@ if __name__ == '__main__':
             print("Insert values to msrtype table successfully")
 
             # set FK for measurements_table
-            set_fk_for_measurements_table(cursor, connection, 'measurements.csv')
+            # set_fk_for_measurements_table(cursor, connection, 'measurements.csv')
 
             create_table(cursor, 'measurement', """CREATE TABLE `covid-19 global data displayer`.`measurement` (
                                                           `PKmeasurement_id` INT NOT NULL AUTO_INCREMENT,
@@ -244,7 +246,7 @@ if __name__ == '__main__':
                                               `FKcountry_id` INT NULL,
                                               `msr_timestamp` DATE NULL,
                                               `FKmsr_id` INT NULL,
-                                              `msr_value` FLOAT NULL,
+                                              `msr_value` DOUBLE NULL,
                                               PRIMARY KEY (`PKupdate_id`),
                                               INDEX `measurement_update_FKcountry_id_idx` (`FKcountry_id` ASC) VISIBLE,
                                               INDEX `measurement_update_FKmsr_id_idx` (`FKmsr_id` ASC) VISIBLE,
