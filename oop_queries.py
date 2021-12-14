@@ -680,12 +680,3 @@ class Queries:
         except Exception as error:
             print("Error in check_for_adding_another_measurement: {}".format(error))
             self.close()
-
-
-# if __name__ == '__main__':
-#     q = Queries()
-#     q.connect(''put_your_password'')
-#     # q.add_new_measurement_type("smoking")
-#     # q.user_update("Israel", "2025-10-22", "new_cases", 25000)
-#     # q.confirm_user_update([["Israel", "2025-10-22", "new_cases", 25000]])
-#     q.close()

@@ -1,0 +1,110 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#login, #send-request > * {
+    font-family: -apple-system, sans-serif;
+}
+
+#login, #send-request, #updatePanel{
+    display: none;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    position: absolute;
+    width: 100%;
+    min-height: 100%;
+    height: fit-content;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.card {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0 0 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.card > *:not(.close-button, h3, h4) {
+    margin-bottom: 15px;
+    margin-top: 15px;
+}
+
+.close-button {
+    display: flex;
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    top: 10px;
+    right: 10px;
+    border-radius: 25px;
+    background-color: white;
+    font-size: 50px;
+    justify-content: center;
+    align-items: center;
+    transform: rotate(45deg);
+    transition: 0.2s;
+    user-select: none;
+}
+
+.close-button:hover {
+    transform: scale(1.3) rotate(45deg);
+    cursor: pointer;
+}
+
+.close-button:active {
+    background-color: lightgray;
+}
+
+#title {
+    width: fit-content;
+    height: fit-content;
+    font-size: 50px;
+    color: darkgray;
+}
+
+.input {
+    width: 250px;
+    height: 40px;
+    font-size: 20px;
+    outline: none;
+    padding: 10px;
+    border-radius: 15px;
+}
+
+.submit {
+    border-radius: 20px;
+    background-color: rgb(31, 132, 248);
+    padding: 10px;
+    width: fit-content;
+    min-width: 100px;
+    text-align: center;
+    color: white;
+    font-size: 20px;
+    transition: 0.2s;
+    user-select: none;
+}
+
+.submit:hover {
+    background-color: rgb(29, 208, 232);
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+.submit:active {
+    background-color: cornflowerblue;
+}
+
+#incorrect, #sent-msr, #updated{
+    visibility: hidden;
+    color: red;
+}

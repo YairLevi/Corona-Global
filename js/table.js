@@ -1,0 +1,162 @@
+function onCloseUpdatePanel() {
+    document.getElementById('updatePanel').style.display = 'none'
+}
+
+async function onSubmit() {
+    let username = document.getElementById('mail').value
+    let password = document.getElementById('password').value
+    let result = await fetchData('admin', {username: username, password: password})
+    if (result['is_admin']) login()
+    else showPopup('incorrect', 'Incorrect Username Or Password')
+}
+
+function showPopup(name, text) {
+    let obj = document.getElementById(name)
+    obj.innerHTML = text
+    obj.style.visibility = 'visible'
+    setTimeout(() => obj.style.visibility = 'hidden', 1500)
+}
+
+let hasLoggedIn=false
+function login() {
+    if (hasLoggedIn) return
+    onCloseLogin()
+    generateTable()
+    document.getElementById('updatePanel').style.display = 'flex'
+    document.getElementById('login-button').onclick = () => {
+        document.getElementById('updatePanel').style.display = 'flex'
+        generateTable()
+    }
+    hasLoggedIn = true
+}
+
+function addMsr() {
+    let input = document.getElementById('msr-input')
+    if (input.value !== '' && !(input.value.indexOf(' ') >= 0)) {
+        fetchData('addmsr', {msr: input.value})
+        datalistOptions('dynamic-variables', [input.value])
+        datalistOptions('static-variables', [input.value])
+        showPopup('sent-msr', 'Added New Measurement')
+    } else {
+        showPopup('sent-msr', 'Invalid Name - Contains WhiteSpaces or Empty')
+    }
+    input.value = ''
+}
+
+async function generateTable() {
+    let table = document.getElementById('table')
+    table.innerHTML = ''
+    table.appendChild(createColumns(['Country', 'Date', 'Variable', 'New Value', '', '']))
+    let requests = await fetchData('updates', {})
+    if (requests === null) return
+    for (let country of Object.keys(requests)) {
+        for (let dict of requests[country]) {
+            table.appendChild(createRow(
+                [country, dict['msr_timestamp'], dict['msr_name'], dict['msr_value']]))
+        }
+    }
+}
+
+async function updateValue() {
+    let country = document.getElementById('country-input').value
+    let date = document.getElementById('date-input').value
+    let variable = document.getElementById('variable-input').value
+    let value = document.getElementById('value-input').value
+    let endDates = await datesData.then(data => data)
+    let text = undefined
+
+    if (!is_valid_datalist_value('countries', country)) {
+        text = 'Invalid Country'
+    } else if (new Date(date) > new Date(endDates['last_date'])
+        || new Date(date) < new Date(endDates['first_date'])
+        || date === '') {
+        text = 'Invalid Date'
+
+    } else if (!is_valid_datalist_value('dynamic-variables', variable)) {
+        text = 'Invalid Variable'
+    } else if (isNaN(parseInt(value))) {
+        text = 'Invalid Value'
+    }
+
+    if (text === undefined) {
+        showPopup('result', 'Sent!')
+        fetchData('update', {
+            country: country,
+            date: date,
+            variable: variable,
+            value: value
+        })
+    } else {
+        showPopup('result', text)
+    }
+}
+
+function createColumns(columns) {
+    let row = document.createElement('tr')
+    for (let c of columns) {
+        let t = document.createElement('th')
+        t.innerHTML = c
+        row.appendChild(t)
+    }
+    return row
+}
+
+function createRow(values) {
+    let row = document.createElement('tr')
+    for (let v of values) {
+        let t = document.createElement('td')
+        t.innerHTML = v
+        row.appendChild(t)
+    }
+
+    // Approve button
+    let t = document.createElement('td')
+    let approve = document.createElement('button')
+    approve.innerHTML = 'Approve'
+    approve.classList.add('approve')
+    approve.onclick = () => approveRequest(values)
+    t.appendChild(approve)
+    row.appendChild(t)
+
+    // Deny button
+    t = document.createElement('td')
+    let deny = document.createElement('button')
+    deny.innerHTML = 'Deny'
+    deny.classList.add('deny')
+    deny.onclick = () => denyRequest(values)
+    t.appendChild(deny)
+    row.appendChild(t)
+
+    // return final row product
+    return row
+}
+
+async function approveRequest(values) {
+    let result = await fetchData('approve', {
+        country: values[0],
+        date: values[1],
+        variable: values[2],
+        value: values[3],
+    })
+    if (result['isFound']) {
+        showPopup('updated', 'Action Succeeded')
+    } else {
+        showPopup('updated', 'Failed. Query has been taken care of.')
+    }
+    generateTable()
+}
+
+async function denyRequest(values) {
+    await fetchData('deny', {
+        country: values[0],
+        date: values[1],
+        variable: values[2],
+        value: values[3],
+    })
+    if (result['isFound']) {
+        showPopup('updated', 'Action Succeeded')
+    } else {
+        showPopup('updated', 'Failed. Query has been taken care of.')
+    }
+    generateTable()
+}

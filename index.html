@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>COVID-19 Spread Data</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/tooltip.css">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/support-login.css">
+    <link rel="stylesheet" href="css/control-panel.css">
+    <link rel="stylesheet" href="css/table.css">
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/maps.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/geodata/worldLow.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/geodata/data/countries2.js"></script>
+</head>
+<body>
+
+    <div id="map"></div>
+    <div id="chart"></div>
+
+    <div id="resize-buttons">
+        <div id="up" onclick="sizeUp()"></div>
+        <div id="down" onclick="sizeDown()"></div>
+    </div>
+
+    <div id="zoom-buttons">
+        <div id="zoom-in" class="button zoom-in"></div>
+        <div id="zoom-out" class="button zoom-out"></div>
+    </div>
+
+    <div id="support-login">
+        <div id="login-button" class="hovers actives" onclick="onLogin()">
+            <img class='icon' src="assets/login.png" alt="">
+            <div class="label">Make Changes As Admin</div>
+        </div>
+        <div id="support-button" class="hovers actives" onclick="onSend()">
+            <img class='icon' src="assets/email.png" alt="">
+            <div class="label">Send A Request</div>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <div id="chart-buttons">
+            <div class="chart-button country-data avatar" data-tooltip="Country-Specific Data"
+                 onclick="lineChart.displayPanel()"></div>
+            <div class="chart-button compare-countries avatar" data-tooltip="Compare Between Countries"
+                 onclick="columnChart.displayPanel()"></div>
+            <div class="chart-button complex-data avatar" data-tooltip="Mixed Charts"
+                 onclick="specialChart.displayPanel()"></div>
+        </div>
+        <div id="panel"></div>
+    </div>
+
+    <datalist id="static-variables">
+    </datalist>
+
+    <datalist id="dynamic-variables">
+    </datalist>
+
+    <datalist id="countries">
+    </datalist>
+
+
+    <!--   Special Screens   -->
+    <div id="login">
+        <div class="card">
+            <div class="close-button" onclick="onCloseLogin()">+</div>
+            <div id="title">SIGN IN</div>
+            <input id='mail' class="input" placeholder="Email">
+            <input id='password' type='password' class="input" placeholder="Password">
+            <div class="submit" onclick="onSubmit()">Sign In</div>
+            <div id="incorrect">_</div>
+        </div>
+    </div>
+
+    <div id="send-request">
+        <div class="card">
+            <div class="close-button" onclick="onCloseSend()">+</div>
+            <input list="countries" id="country-input" class="input" placeholder="Select Country">
+            <input id="date-input" type=date class="input" placeholder="Select Date">
+            <input list="dynamic-variables" id="variable-input" class="input" placeholder="Select Variable">
+            <input id="value-input" class="input" placeholder="Put a new value">
+            <div class="submit" onclick="updateValue()">Send Request To Change</div>
+            <div id="result" style="visibility:hidden;color:red;">_</div>
+        </div>
+    </div>
+
+    <div id="updatePanel">
+        <div class="card">
+            <div class="close-button" onclick="onCloseUpdatePanel()">+</div>
+            <div id="updated">_</div>
+            <table id="table"></table>
+            <h3>Add A New Measurement:</h3>
+            <input id="msr-input" class='input' placeholder="Type here...">
+            <div class="submit" onclick="addMsr()">Update Measurements</div>
+            <div id="sent-msr">_</div>
+        </div>
+    </div>
+
+    <script src="js/util.js"></script>
+    <script src="js/requests.js"></script>
+    <script src="js/lists.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/main-container.js"></script>
+    <script src="js/map-buttons.js"></script>
+    <script src="js/control-panel.js"></script>
+    <script src="js/slider.js"></script>
+    <script src="js/series.js"></script>
+    <script src="js/table.js"></script>
+</body>
+</html>

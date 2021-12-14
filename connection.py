@@ -131,7 +131,7 @@ def add_trigger_to_measurements_table(my_cursor, my_connection):
 
 
 def add_indices_to_measurements_table(my_cursor, my_connection):
-    my_cursor.execute("CREATE INDEX searchIndex ON measurement(msr_timestamp, FKmsr_id, msr_value);")
+    my_cursor.execute("CREATE INDEX searchIndex ON measurement(msr_timestamp, FKmsr_id);")
     my_cursor.execute("""create index mapIndex on measurement(msr_timestamp, FKmsr_id, FKcountry_id);""")
     my_connection.commit()
 
@@ -144,7 +144,7 @@ if __name__ == '__main__':
         connection = mysql.connector.connect(host='localhost',
                                              database='covid-19 global data displayer',
                                              user='root',
-                                             password='put_your_password')  # put your MYSQL server password here.
+                                             password=sys.argv[1])  # put your MYSQL server password here.
         if connection.is_connected():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
