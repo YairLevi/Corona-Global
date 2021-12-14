@@ -67,11 +67,8 @@ async function updateValue() {
 
     if (!is_valid_datalist_value('countries', country)) {
         text = 'Invalid Country'
-    } else if (new Date(date) > new Date(endDates['last_date'])
-        || new Date(date) < new Date(endDates['first_date'])
-        || date === '') {
+    } else if (date === '') {
         text = 'Invalid Date'
-
     } else if (!is_valid_datalist_value('dynamic-variables', variable)) {
         text = 'Invalid Variable'
     } else if (isNaN(parseInt(value))) {
@@ -147,7 +144,7 @@ async function approveRequest(values) {
 }
 
 async function denyRequest(values) {
-    await fetchData('deny', {
+    let result = await fetchData('deny', {
         country: values[0],
         date: values[1],
         variable: values[2],

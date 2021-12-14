@@ -251,22 +251,21 @@ class Queries:
     # This query will display as a column graph.
     def percentage_cases_out_of_total_population_in_each_continent(self):
         try:
-            results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_cases, 
-                                            SUM(population) AS total_population, 
-                                            100*SUM(msr_value)/SUM(population) AS cases_precentage
-                                            FROM (WITH last_msr AS (
-                                                    SELECT *, ROW_NUMBER () OVER 
-                                                    (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
-                                                    FROM measurement  WHERE FKmsr_id = (SELECT PKmsr_id
-                                                 FROM msrtype WHERE msr_name = 'total_cases')
-                                                ) SELECT last_msr.*, country.FKcontinent_id FROM last_msr, country	
-                                                WHERE rn = 1
-                                                AND PKcountry_id = FKcountry_id) AS m, continent, country
-                                            WHERE continent.PKcontinent_id = m.FKcontinent_id
-                                            AND country.FKcontinent_id = continent.PKcontinent_id
-                                            GROUP BY continent_name
-                                            ORDER BY cases_precentage DESC
-                                            """, self.__connection)
+            results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_cases,
+                                                    SUM(population) AS total_population, 
+                                                    100*SUM(msr_value)/SUM(population) AS cases_precentage
+                                                    FROM measurement, country, msrtype, continent
+                                                    WHERE measurement.FKcountry_id = country.PKcountry_id
+                                                    AND measurement.FKmsr_id = msrtype.PKmsr_id
+                                                    AND country.FKcontinent_id = continent.PKcontinent_id
+                                                    AND msr_timestamp = (SELECT MAX(msr_timestamp) FROM measurement)
+                                                    AND FKmsr_id = (
+                                                        SELECT PKmsr_id
+                                                        FROM msrtype
+                                                        WHERE msr_name = 'total_cases')
+                                                    GROUP BY continent_name
+                                                    ORDER BY cases_precentage DESC
+                                                    """, self.__connection)
 
             continent_dict = {}
             for row in results.values:
@@ -460,7 +459,7 @@ class Queries:
                 print("delete row from measurement_update table and add this row to measurement table, successfully")
 
             return {'isFound': True}
-        except Exception as error:
+        except mysql.connector.Error as error:
             print("Error in confirm_user_update: {}".format(error))
             self.close()
 
@@ -621,32 +620,6 @@ class Queries:
             print("Error in get_updates_for_display: {}".format(error))
             self.close()
 
-    # An existing admin, clicked on some user updates, and wants to reject them, so he send a list of
-    # updates, that we will need to delete from update table, and add them to measurements table.
-    # update_list[i] = (country_name, date, variable, value)
-    # Note: Date format that this function get: '2020-02-24'.
-    def reject_user_update(self, update_list):
-        try:
-            for row in update_list:
-                country_name, date, msr_name, msr_value = row[0], row[1], row[2], row[3]
-
-                # delete this row from measurement_update table:
-                query = """delete from measurement_update 
-                            where FKcountry_id = (select PKcountry_id from country where country_name = '{0}') 
-                            and msr_timestamp = '{1}'
-                                and FKmsr_id = (select PKmsr_id from msrtype where msr_name = '{2}') 
-                                and msr_value = {3};"""
-                query = query.format(country_name, date, msr_name, msr_value)
-                self.__cursor.execute(query)
-                self.__connection.commit()
-            return {'isFound': True}
-        except mysql.connector.Error as error:
-            print("Error in reject_user_update: {}".format(error))
-            self.close()
-
-        except IndexError:
-            return {'isFound': False}
-
     # For example: if we have a country that the last measurement of 'new_cases' was in date 'x' and
     # this country didn't measure 'total cases' from date 'x' until the last date in the DB -->
     # we must add another measurement of 'total_cases' in date x that equals to the last value of
@@ -680,3 +653,33 @@ class Queries:
         except Exception as error:
             print("Error in check_for_adding_another_measurement: {}".format(error))
             self.close()
+
+    # An existing admin, clicked on some user updates, and wants to reject them, so he send a list of
+    # updates, that we will need to delete from update table, and add them to measurements table.
+    # update_list[i] = (country_name, date, variable, value)
+    # Note: Date format that this function get: '2020-02-24'.
+    def reject_user_update(self, update_list):
+        try:
+            for row in update_list:
+                country_name, date, msr_name, msr_value = row[0], row[1], row[2], row[3]
+
+                # delete this row from measurement_update table:
+                query = """select FKcountry_id,msr_timestamp,FKmsr_id,msr_value 
+                                from measurement_update where FKcountry_id = (select PKcountry_id from country where country_name = '{0}')
+                                 and msr_timestamp = '{1}' and FKmsr_id = (select PKmsr_id from msrtype where msr_name = '{2}') 
+                                 and msr_value = {3};"""
+
+                query = query.format(country_name, date, msr_name, msr_value)
+                row = pd.read_sql_query(query, self.__connection).values[0]
+                query = """delete from measurement_update where FKcountry_id = {0} and msr_timestamp = '{1}'
+                                and FKmsr_id = {2} and msr_value = {3};"""
+                query = query.format(row[0], date, row[2], row[3])
+                self.__cursor.execute(query)
+                self.__connection.commit()
+            return {'isFound': True}
+
+        except mysql.connector.Error as error:
+            print("Error in reject_user_update: {}".format(error))
+            self.close()
+        except IndexError:
+            return {'isFound': False}

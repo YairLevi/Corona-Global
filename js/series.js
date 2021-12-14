@@ -168,6 +168,7 @@ class LineChart {
             chart3D.series.pop()
         }
         chart3D.visible = false
+        chartLabel.visible = false
         chart.visible = true
 
         let dateAxis = chart.xAxes.push(new am4charts.DateAxis())
@@ -231,6 +232,7 @@ class ColumnChart {
         emptyChart(chart)
         // mainContainer.children.removeValue(chart3D)
         chart3D.visible = false
+        chartLabel.visible = false
         chart.visible = true
 
         let dateAxis = chart.xAxes.push(new am4charts.DateAxis())
@@ -337,8 +339,10 @@ class SpecialChart {
         chart3D.cursor.lineX.stroke = am4core.color('#fff')
         chart3D.cursor.lineY.stroke = am4core.color('#fff')
 
+        chartLabel.visible = true
         await fetchData('case_percentage_population', {})
             .then(data => {
+
                 let d = []
                 for (let cont of Object.keys(data)) {
                     d.push({
@@ -349,6 +353,7 @@ class SpecialChart {
                 }
                 chart3D.data = d
             })
+        chartLabel.visible = false
 
         // Create series
         var case_percent = chart3D.series.push(new am4charts.ColumnSeries3D());
@@ -388,6 +393,8 @@ class SpecialChart {
         series.labels.template.fill = '#fff'
         series.labels.template.fontSize = 17
         series.slices.template.stroke = '#fff'
+
+        chartLabel.visible = true
         await fetchData('case_percentage_global', {})
             .then(data => {
                 let d = []
@@ -399,6 +406,7 @@ class SpecialChart {
                 }
                 chart3D.data = d
             })
+        chartLabel.visible = false
 
         series.dataFields.value = "percentage";
         series.dataFields.category = "continent";
@@ -426,6 +434,7 @@ class SpecialChart {
         chart3D.cursor.lineX.stroke = am4core.color('#fff')
         chart3D.cursor.lineY.stroke = am4core.color('#fff')
 
+        chartLabel.visible = true
         await fetchData('death_percentage', {})
             .then(data => {
                 let d = []
@@ -441,6 +450,7 @@ class SpecialChart {
                 }
                 chart3D.data = d
             })
+        chartLabel.visible = false
 
         // Create series
         var deaths_percent = chart3D.series.push(new am4charts.ColumnSeries3D());

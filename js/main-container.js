@@ -79,6 +79,16 @@ chart.scrollbarX.startGrip.icon.disabled = true;
 chart.scrollbarX.endGrip.icon.disabled = true;
 chart.zIndex = 2
 
+let chartLabel = mainContainer.createChild(am4core.Label)
+chartLabel.text = "Loading Data...";
+chartLabel.height = am4core.percent(50)
+chartLabel.fontSize = '2em';
+chartLabel.paddingLeft = am4core.percent(1)
+chartLabel.valign = "middle"
+chartLabel.align = "center"
+chartLabel.fill = am4core.color("#fff")
+chartLabel.visible = false
+
 // Slider Container
 let sliderContainer = mainContainer.createChild(am4core.Container)
 sliderContainer.padding(20, 0, 0, 0)
