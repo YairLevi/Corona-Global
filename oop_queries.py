@@ -251,21 +251,23 @@ class Queries:
     # This query will display as a column graph.
     def percentage_cases_out_of_total_population_in_each_continent(self):
         try:
-            results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_cases,
-                                                    SUM(population) AS total_population, 
-                                                    100*SUM(msr_value)/SUM(population) AS cases_precentage
-                                                    FROM measurement, country, msrtype, continent
-                                                    WHERE measurement.FKcountry_id = country.PKcountry_id
-                                                    AND measurement.FKmsr_id = msrtype.PKmsr_id
-                                                    AND country.FKcontinent_id = continent.PKcontinent_id
-                                                    AND msr_timestamp = (SELECT MAX(msr_timestamp) FROM measurement)
-                                                    AND FKmsr_id = (
-                                                        SELECT PKmsr_id
-                                                        FROM msrtype
-                                                        WHERE msr_name = 'total_cases')
-                                                    GROUP BY continent_name
-                                                    ORDER BY cases_precentage DESC
-                                                    """, self.__connection)
+
+            results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_cases, continental_population AS total_population, 100 * SUM(msr_value) / continental_population AS cases_percentage
+                                            FROM (WITH last_msr AS (
+                                                    SELECT *, ROW_NUMBER () OVER (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
+                                                    FROM measurement  WHERE FKmsr_id = (SELECT PKmsr_id
+                                                 FROM msrtype WHERE msr_name = 'total_cases')
+                                                ) SELECT last_msr.*, country.FKcontinent_id FROM last_msr, country	
+                                                WHERE rn = 1
+                                                AND PKcountry_id = FKcountry_id) AS m, continent, (
+                                                SELECT PKcontinent_id, SUM(population) AS continental_population
+                                                FROM country, continent
+                                                WHERE continent.PKcontinent_id = country.FKcontinent_id
+                                                GROUP BY PKcontinent_id) AS continent_population
+                                            WHERE continent.PKcontinent_id = m.FKcontinent_id
+                                            AND continent.PKcontinent_id = continent_population.PKcontinent_id
+                                            GROUP BY m.FKcontinent_id
+                                            ORDER BY cases_percentage DESC""", self.__connection)
 
             continent_dict = {}
             for row in results.values:
