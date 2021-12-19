@@ -201,7 +201,7 @@ if __name__ == '__main__':
             print("Insert values to msrtype table successfully")
 
             # set FK for measurements_table
-            # set_fk_for_measurements_table(cursor, connection, 'measurements.csv')
+            set_fk_for_measurements_table(cursor, connection, 'measurements.csv')
 
             create_table(cursor, 'measurement', """CREATE TABLE `covid-19 global data displayer`.`measurement` (
                                                           `PKmeasurement_id` INT NOT NULL AUTO_INCREMENT,
