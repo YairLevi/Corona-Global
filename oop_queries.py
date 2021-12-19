@@ -251,11 +251,10 @@ class Queries:
     # This query will display as a column graph.
     def percentage_cases_out_of_total_population_in_each_continent(self):
         try:
-
             results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_cases, continental_population AS total_population, 100 * SUM(msr_value) / continental_population AS cases_percentage
                                             FROM (WITH last_msr AS (
-                                                    SELECT *, ROW_NUMBER () OVER (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
-                                                    FROM measurement  WHERE FKmsr_id = (SELECT PKmsr_id
+                                                 SELECT *, ROW_NUMBER () OVER (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
+                                                 FROM measurement  WHERE FKmsr_id = (SELECT PKmsr_id
                                                  FROM msrtype WHERE msr_name = 'total_cases')
                                                 ) SELECT last_msr.*, country.FKcontinent_id FROM last_msr, country	
                                                 WHERE rn = 1
@@ -267,7 +266,8 @@ class Queries:
                                             WHERE continent.PKcontinent_id = m.FKcontinent_id
                                             AND continent.PKcontinent_id = continent_population.PKcontinent_id
                                             GROUP BY m.FKcontinent_id
-                                            ORDER BY cases_percentage DESC""", self.__connection)
+                                            ORDER BY cases_percentage DESC
+                                            """, self.__connection)
 
             continent_dict = {}
             for row in results.values:
@@ -288,7 +288,7 @@ class Queries:
             results = pd.read_sql_query("""SELECT DISTINCT country_name, aged.aged_70_older, total_deaths, population,
                                             total_cases, 100*total_deaths/total_cases AS deaths_precentage
                                             FROM (
-                                            SELECT FKcountry_id, aged_70_older, msr_value AS total_deaths, msr_timestamp
+                                            SELECT FKcountry_id, aged_70_older, msr_value AS total_deaths
                                             FROM (WITH last_msr AS
                                              (
                                               SELECT *, ROW_NUMBER () OVER 
@@ -300,7 +300,7 @@ class Queries:
                                              AND PKcountry_id = FKcountry_id) AS m
                                                 ORDER BY aged_70_older DESC
                                                 LIMIT 5) AS aged, (
-                                            SELECT FKcountry_id, msr_value AS total_cases, msr_timestamp
+                                            SELECT FKcountry_id, msr_value AS total_cases
                                             FROM (WITH last_msr AS
                                              (
                                               SELECT *, ROW_NUMBER () OVER 
@@ -332,34 +332,27 @@ class Queries:
     # This query will display as Pie Chart.
     def percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent(self):
         try:
-            results = pd.read_sql_query("""SELECT cases_per_continent.continent_name, 
-                                            100*total_cases_continent/global_total_cases AS percentage
-                                        FROM (
-                                         SELECT continent_name, SUM(msr_value) AS total_cases_continent
-                                         FROM (WITH last_msr AS (
-                                           SELECT *, ROW_NUMBER () OVER (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
-                                           FROM measurement  WHERE FKmsr_id = (SELECT PKmsr_id
-                                           FROM msrtype WHERE msr_name = 'total_cases')
-                                          ) SELECT last_msr.*, country.FKcontinent_id FROM last_msr, country 
-                                          WHERE rn = 1
-                                          AND PKcountry_id = FKcountry_id) AS m, continent 
-                                         WHERE continent.PKcontinent_id = m.FKcontinent_id
-                                         GROUP BY continent_name) AS cases_per_continent,
-                                            (
-                                         SELECT SUM(total_cases) AS global_total_cases
-                                         FROM (
-                                         SELECT continent_name, SUM(msr_value) AS total_cases
-                                         FROM (WITH last_msr AS (
-                                          SELECT *, ROW_NUMBER () OVER (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
-                                           FROM measurement  WHERE FKmsr_id = (SELECT PKmsr_id
-                                           FROM msrtype WHERE msr_name = 'total_cases')
-                                          ) SELECT last_msr.*, country.FKcontinent_id FROM last_msr, country 
-                                          WHERE rn = 1
-                                          AND PKcountry_id = FKcountry_id) AS m, continent
-                                         WHERE continent.PKcontinent_id = m.FKcontinent_id 
-                                         GROUP BY continent_name) AS continental_cases
-                                         ) AS total_continental_cases
-                                        ORDER BY percentage DESC""", self.__connection)
+            results = pd.read_sql_query("""SELECT cases_per_continent.continent_name, 100*total_cases_continent/global_total_cases AS percentage
+                                            FROM (
+                                            SELECT continent_name, SUM(msr_value) AS total_cases_continent
+                                            FROM (WITH last_msr AS (
+                                                    SELECT *, ROW_NUMBER () OVER (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
+                                                    FROM measurement  WHERE FKmsr_id = (SELECT PKmsr_id
+                                                 FROM msrtype WHERE msr_name = 'total_cases')
+                                                ) SELECT last_msr.*, country.FKcontinent_id FROM last_msr, country	
+                                                WHERE rn = 1
+                                                AND PKcountry_id = FKcountry_id) AS m, continent	
+                                            WHERE continent.PKcontinent_id = m.FKcontinent_id
+                                            GROUP BY continent_name) AS cases_per_continent,
+                                            (SELECT SUM(msr_value) AS global_total_cases
+                                            FROM (WITH last_msr AS (
+                                                SELECT *, ROW_NUMBER () OVER (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
+                                                    FROM measurement 
+                                                    WHERE FKmsr_id = (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'total_cases')
+                                                ) SELECT last_msr.*, country.FKcontinent_id FROM last_msr, country	
+                                                WHERE rn = 1
+                                                AND PKcountry_id = FKcountry_id) AS m) AS total_continental_cases
+                                            ORDER BY percentage DESC""", self.__connection)
             continent_dict = {}
             for row in results.values:
                 continent_dict[row[0]] = row[1]
