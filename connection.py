@@ -5,6 +5,16 @@ import os
 import sys
 
 
+# given a list 'data' --> that represent a row data - that we want to insert to country's table,
+# we count the number of none values from the fourth column until end.
+def amount_of_missed_data_in_row(data):
+    amount_of_none = 0
+    for element in data[3:len(data)]:
+        if not element:
+            amount_of_none += 1
+    return amount_of_none
+
+
 # Given a cursor, a db_table_name, and q query --> Check if there is a table in the DB with 'db_table_name' name
 # and if so throw it and then create a new one in the DB.
 def create_table(my_cursor, db_table_name, query):
@@ -34,7 +44,11 @@ def insert_into_table(csv_name, table_name, my_cursor, my_connection):
             data = [None if v == '' else v for v in data]
             if data[0] is None:
                 continue
-            if 'World' in data:
+
+            # len(data) = 13 --> this is a row of country table (country table has 13 columns).
+            # And if we have more than five columns that doesn't have data (None values) --> we don't insert this row
+            # to country's table
+            if len(data) >= 13 and amount_of_missed_data_in_row(data) >= 5:
                 continue
 
             # change the format of the date (for the measurements table). data is a row form ths csv file.
@@ -52,7 +66,7 @@ def insert_into_table(csv_name, table_name, my_cursor, my_connection):
 # we create another table that connect between country and continent --> in order to find the FK for
 # the country_table. Finally we drop this table (that assign each country it's continent)
 def calc_fk_for_country_table(my_cursor, my_connection, csv_name):
-    create_table(cursor, 'continent_to_country', """CREATE TABLE `covid-19 global data displayer`.`continent_to_country` (
+    create_table(cursor, 'continent_to_country', """CREATE TABLE continent_to_country (
                                                       `continent_name` VARCHAR(45) NULL,
                                                       `country_name` VARCHAR(45) NULL,
                                                       `id` INT NOT NULL AUTO_INCREMENT,
@@ -117,6 +131,30 @@ def set_fk_for_measurements_table(my_cursor, my_connection, csv_name):
     delete_file('combined.csv')
 
 
+# check if one of the values in the columns of country table is null, and if so, change it to 0.
+def add_trigger_to_country_table(my_cursor, my_connection):
+    my_cursor.execute("drop trigger if exists country_trigger")
+    query = "CREATE TRIGGER country_trigger" \
+            " BEFORE INSERT ON country" \
+            " FOR EACH ROW" \
+            " BEGIN" \
+            " SET NEW.population = IFNULL(NEW.population, 0);" \
+            " SET NEW.population_density = IFNULL(NEW.population_density, 0);" \
+            " SET NEW.median_age = IFNULL(NEW.median_age, 0);" \
+            " SET NEW.aged_65_older = IFNULL(NEW.aged_65_older, 0);" \
+            " SET NEW.aged_70_older = IFNULL(NEW.aged_70_older, 0);" \
+            " SET NEW.gdp_per_capita = IFNULL(NEW.gdp_per_capita, 0);" \
+            " SET NEW.cardiovasc_death_rate = IFNULL(NEW.cardiovasc_death_rate, 0);" \
+            " SET NEW.diabetes_prevalence = IFNULL(NEW.diabetes_prevalence, 0);" \
+            " SET NEW.hospital_beds_per_thousand = IFNULL(NEW.hospital_beds_per_thousand, 0);" \
+            " SET NEW.life_expectancy = IFNULL(NEW.life_expectancy, 0);" \
+            " SET NEW.human_development_index = IFNULL(NEW.human_development_index, 0);" \
+            " END; "
+
+    my_cursor.execute(query)
+    my_connection.commit()
+
+
 # check if one of the msr_value in measurement's table is below 0 and if so set msr_value = 0.
 def add_trigger_to_measurements_table(my_cursor, my_connection):
     my_cursor.execute("drop trigger if exists measurements_trigger")
@@ -131,7 +169,7 @@ def add_trigger_to_measurements_table(my_cursor, my_connection):
 
 
 def add_indices_to_measurements_table(my_cursor, my_connection):
-    my_cursor.execute("CREATE INDEX searchIndex ON measurement(msr_timestamp, FKmsr_id);")
+    my_cursor.execute("create index searchIndex on measurement(msr_timestamp, FKmsr_id);")
     my_cursor.execute("""create index mapIndex on measurement(msr_timestamp, FKmsr_id, FKcountry_id);""")
     my_connection.commit()
 
@@ -142,20 +180,21 @@ if __name__ == '__main__':
     cursor = None
     try:
         connection = mysql.connector.connect(host='localhost',
-                                             database='covid-19 global data displayer',
-                                             user='root',
-                                             password=sys.argv[1])  # put your MYSQL server password here.
+                                             user=sys.argv[1],  # put your MYSQL server user here.
+                                             password=sys.argv[2])  # put your MYSQL server password here.
         if connection.is_connected():
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
             cursor = connection.cursor()
+            cursor.execute("""create database covid_db;""")
+            cursor.execute("""use covid_db;""")
             cursor.execute("select database();")
             record = cursor.fetchone()
             print("You're connected to database: ", record)
 
             # creates tables:
             cursor.execute('SET FOREIGN_KEY_CHECKS = 0;')
-            create_table(cursor, 'continent', """CREATE TABLE `covid-19 global data displayer`.`continent` (
+            create_table(cursor, 'continent', """CREATE TABLE continent (
                                                 `PKcontinent_id` TINYINT NOT NULL AUTO_INCREMENT,
                                                 `continent_name` VARCHAR(45) NULL,
                                                  PRIMARY KEY (`PKcontinent_id`)); """)
@@ -166,7 +205,7 @@ if __name__ == '__main__':
             # calculate FK for country table:
             calc_fk_for_country_table(cursor, connection, 'continent_to_country.csv')
 
-            create_table(cursor, 'country', """CREATE TABLE `covid-19 global data displayer`.`country` (
+            create_table(cursor, 'country', """CREATE TABLE country (
                                               `PKcountry_id` INT NOT NULL AUTO_INCREMENT,
                                               `FKcontinent_id` TINYINT NULL,
                                               `country_name` VARCHAR(45) NULL,
@@ -185,14 +224,15 @@ if __name__ == '__main__':
                                               INDEX `FKcontinent_id_idx` (`FKcontinent_id` ASC) VISIBLE,
                                               CONSTRAINT `FKcontinent_id`
                                             FOREIGN KEY (`FKcontinent_id`)
-                                            REFERENCES `covid-19 global data displayer`.`continent` (`PKcontinent_id`)
+                                            REFERENCES continent (`PKcontinent_id`)
                                                 ON DELETE RESTRICT
                                                 ON UPDATE RESTRICT); """)
+            add_trigger_to_country_table(cursor, connection)
             # insert values to table:
             insert_into_table('Countries.csv', 'country', cursor, connection)
             print("Insert values to country table successfully")
 
-            create_table(cursor, 'msrtype', """CREATE TABLE `covid-19 global data displayer`.`msrtype` (
+            create_table(cursor, 'msrtype', """CREATE TABLE msrtype (
                                           `PKmsr_id` INT NOT NULL AUTO_INCREMENT,
                                           `msr_name` VARCHAR(45) NULL,
                                           PRIMARY KEY (`PKmsr_id`)); """)
@@ -201,25 +241,25 @@ if __name__ == '__main__':
             print("Insert values to msrtype table successfully")
 
             # set FK for measurements_table
-            set_fk_for_measurements_table(cursor, connection, 'measurements.csv')
+            # set_fk_for_measurements_table(cursor, connection, 'measurements.csv')
 
-            create_table(cursor, 'measurement', """CREATE TABLE `covid-19 global data displayer`.`measurement` (
+            create_table(cursor, 'measurement', """CREATE TABLE measurement (
                                                           `PKmeasurement_id` INT NOT NULL AUTO_INCREMENT,
                                                           `FKcountry_id` INT NULL,
                                                           `msr_timestamp` DATE NULL,
                                                           `FKmsr_id` INT NULL,
-                                                          `msr_value` FLOAT NULL,
+                                                          `msr_value` DOUBLE NULL,
                                                           PRIMARY KEY (`PKmeasurement_id`),
                                                           INDEX `FKcountry_id_idx` (`FKcountry_id` ASC) VISIBLE,
                                                           INDEX `FKmsr_id_idx` (`FKmsr_id` ASC) VISIBLE,
                                                           CONSTRAINT `FKcountry_id`
                                                             FOREIGN KEY (`FKcountry_id`)
-                                                            REFERENCES `covid-19 global data displayer`.`country` (`PKcountry_id`)
+                                                            REFERENCES country (`PKcountry_id`)
                                                             ON DELETE RESTRICT
                                                             ON UPDATE RESTRICT,
                                                           CONSTRAINT `FKmsr_id`
                                                             FOREIGN KEY (`FKmsr_id`)
-                                                            REFERENCES `covid-19 global data displayer`.`msrtype` (`PKmsr_id`)
+                                                            REFERENCES msrtype (`PKmsr_id`)
                                                             ON DELETE RESTRICT
                                                             ON UPDATE RESTRICT);
                                                          """)
@@ -231,7 +271,7 @@ if __name__ == '__main__':
             insert_into_table('measurements.csv', 'measurement', cursor, connection)
             print("Insert values to measurement table successfully")
 
-            create_table(cursor, 'admin', """CREATE TABLE `covid-19 global data displayer`.`admin` (
+            create_table(cursor, 'admin', """CREATE TABLE admin (
                                               `PKadmin_id` INT NOT NULL AUTO_INCREMENT,
                                               `admin_name` VARCHAR(45) NULL,
                                               `admin_pwd` VARCHAR(45) NULL,
@@ -241,7 +281,7 @@ if __name__ == '__main__':
             insert_into_table('admins.csv', 'admin', cursor, connection)
             print("Insert values to admin table successfully")
 
-            create_table(cursor, 'measurement_update', """CREATE TABLE `covid-19 global data displayer`.`measurement_update` (
+            create_table(cursor, 'measurement_update', """CREATE TABLE measurement_update (
                                               `PKupdate_id` INT NOT NULL AUTO_INCREMENT,
                                               `FKcountry_id` INT NULL,
                                               `msr_timestamp` DATE NULL,
@@ -252,12 +292,12 @@ if __name__ == '__main__':
                                               INDEX `measurement_update_FKmsr_id_idx` (`FKmsr_id` ASC) VISIBLE,
                                               CONSTRAINT `measurement_update_FKcountry_id`
                                                 FOREIGN KEY (`FKcountry_id`)
-                                                REFERENCES `covid-19 global data displayer`.`country` (`PKcountry_id`)
+                                                REFERENCES country (`PKcountry_id`)
                                                 ON DELETE RESTRICT
                                                 ON UPDATE RESTRICT,
                                               CONSTRAINT `measurement_update_FKmsr_id`
                                                 FOREIGN KEY (`FKmsr_id`)
-                                                REFERENCES `covid-19 global data displayer`.`msrtype` (`PKmsr_id`)
+                                                REFERENCES msrtype (`PKmsr_id`)
                                                 ON DELETE RESTRICT
                                                 ON UPDATE RESTRICT);
                                             """)

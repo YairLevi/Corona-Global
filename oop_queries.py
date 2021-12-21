@@ -10,11 +10,11 @@ class Queries:
         self.__connection = None
         self.__cursor = None
 
-    def connect(self, password):
+    def connect(self, user, password):
         try:
             self.__connection = mysql.connector.connect(host='localhost',
-                                                        database='covid-19 global data displayer',
-                                                        user='root',
+                                                        database='covid_db',
+                                                        user=user,
                                                         password=password)  # put your MYSQL server password here.
 
             if self.__connection.is_connected():
@@ -107,9 +107,9 @@ class Queries:
                                                 group by FKcountry_id) as m2
                     where m1.msr_timestamp = m2.max_timestamp and m1.FKmsr_id = 
                     (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'new_cases') and m1.FKcountry_id = m2.country_id
-                    
+
                     union all 
-                    
+
                     select sum(msr_value)
                     from measurement as m1 use index(mapIndex), 
                                             (select FKcountry_id as 'country_id', max(msr_timestamp) as 'max_timestamp'
@@ -119,9 +119,9 @@ class Queries:
                                                 group by FKcountry_id) as m2
                     where m1.msr_timestamp = m2.max_timestamp and m1.FKmsr_id = 
                     (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'total_cases') and m1.FKcountry_id = m2.country_id
-                    
+
                     union all 
-                    
+
                     select sum(msr_value)
                     from measurement as m1 use index(mapIndex), 
                                             (select FKcountry_id as 'country_id', max(msr_timestamp) as 'max_timestamp'
@@ -131,9 +131,9 @@ class Queries:
                                                 group by FKcountry_id) as m2
                     where m1.msr_timestamp = m2.max_timestamp and m1.FKmsr_id = 
                     (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'new_deaths') and m1.FKcountry_id = m2.country_id
-                    
+
                     union all 
-                    
+
                     select sum(msr_value)
                     from measurement as m1 use index(mapIndex), 
                                             (select FKcountry_id as 'country_id', max(msr_timestamp) as 'max_timestamp'
