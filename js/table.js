@@ -1,7 +1,10 @@
+
+// when closing the update panel
 function onCloseUpdatePanel() {
     document.getElementById('updatePanel').style.display = 'none'
 }
 
+// when submitting the name and password to check if admin
 async function onSubmit() {
     let username = document.getElementById('mail').value
     let password = document.getElementById('password').value
@@ -10,6 +13,7 @@ async function onSubmit() {
     else showPopup('incorrect', 'Incorrect Username Or Password')
 }
 
+// display popup error text
 function showPopup(name, text) {
     let obj = document.getElementById(name)
     obj.innerHTML = text
@@ -17,6 +21,7 @@ function showPopup(name, text) {
     setTimeout(() => obj.style.visibility = 'hidden', 1500)
 }
 
+// check if logged in - to avoid asking again
 let hasLoggedIn=false
 function login() {
     if (hasLoggedIn) return
@@ -30,6 +35,7 @@ function login() {
     hasLoggedIn = true
 }
 
+// adding a new measurement type as admin
 function addMsr() {
     let input = document.getElementById('msr-input')
     if (input.value !== '' && !(input.value.indexOf(' ') >= 0)) {
@@ -43,6 +49,7 @@ function addMsr() {
     input.value = ''
 }
 
+// generating the table of requests from users
 async function generateTable() {
     let table = document.getElementById('table')
     table.innerHTML = ''
@@ -57,6 +64,7 @@ async function generateTable() {
     }
 }
 
+// updaing a new value
 async function updateValue() {
     let country = document.getElementById('country-input').value
     let date = document.getElementById('date-input').value
@@ -88,6 +96,7 @@ async function updateValue() {
     }
 }
 
+// creating a column for the table
 function createColumns(columns) {
     let row = document.createElement('tr')
     for (let c of columns) {
@@ -98,6 +107,7 @@ function createColumns(columns) {
     return row
 }
 
+// creating a new row for the table
 function createRow(values) {
     let row = document.createElement('tr')
     for (let v of values) {
@@ -128,6 +138,7 @@ function createRow(values) {
     return row
 }
 
+// approving a request - changing the data in the data base
 async function approveRequest(values) {
     let result = await fetchData('approve', {
         country: values[0],
@@ -143,6 +154,7 @@ async function approveRequest(values) {
     generateTable()
 }
 
+// denying a request.
 async function denyRequest(values) {
     let result = await fetchData('deny', {
         country: values[0],

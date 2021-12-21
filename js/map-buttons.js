@@ -1,4 +1,5 @@
 
+// adding a label to the window
 function addButton(name) {
     let button = buttonContainer.createChild(am4core.Button)
     button.label.valign = "middle"
@@ -28,6 +29,7 @@ function addButton(name) {
     return button
 }
 
+// update new label values
 function updateButtons(json) {
     for (let k of Object.keys(json)) {
         if (json[k] == null) json[k] = 0

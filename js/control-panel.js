@@ -1,10 +1,12 @@
 
+// creating a slot in the control panel area
 function makeSeriesSelector() {
     let seriesSelector = document.createElement('div')
     seriesSelector.classList.add('series-selector')
     return seriesSelector
 }
 
+// make input drop-down list
 function inputList(listName, placeHolder='', value='') {
     let input = document.createElement('input')
     input.setAttribute('list', listName)
@@ -14,6 +16,7 @@ function inputList(listName, placeHolder='', value='') {
     return input
 }
 
+// make input color picker
 function colorList(value='#ffffff') {
     let color = document.createElement('input')
     color.type = 'color'
@@ -21,6 +24,7 @@ function colorList(value='#ffffff') {
     return color
 }
 
+// emptying panel
 function returnEmptyPanel() {
     let panel = document.getElementById('panel')
     panel.innerHTML = ''

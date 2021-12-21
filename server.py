@@ -7,6 +7,8 @@ import sys
 
 encoding = 'utf-8'
 
+
+# A set of functions to take care of each route request from the server.
 def countries(params):
     return queries.get_countries()
 
@@ -63,6 +65,8 @@ def approve(params):
 def deny(params):
     return queries.reject_user_update([[params['country'], params['date'], params['variable'], params['value']]])
 
+
+# all routes supported by the server
 routes_GET = {
     '/countries': countries,
     '/variables': variables,
@@ -81,6 +85,7 @@ routes_GET = {
     '/deny': deny,
 }
 
+# Server class
 class Server(SimpleHTTPRequestHandler):
 
     def __init__(self, request: bytes, client_address, server):
@@ -103,6 +108,8 @@ class Server(SimpleHTTPRequestHandler):
             pDict[pair[0]] = pair[1]
         return pDict
 
+    # Receive request from client.
+    # Parse query variables and path.
     def do_GET(self):
         self._set_headers()
         if self.path == '/favicon.ico': return

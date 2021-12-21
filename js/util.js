@@ -1,10 +1,12 @@
 
+// adding addDays to Date built-in class
 Date.prototype.addDays = function(days) {
     let date = new Date(this.valueOf());
     date.setDate(date.getDate() + days);
     return date;
 }
 
+// getting a list of dates between range
 function getDates (startDate, stopDate) {
     let dateArray = []
     let currentDate = startDate;
@@ -15,6 +17,7 @@ function getDates (startDate, stopDate) {
     return dateArray;
 }
 
+// get Date string
 function getDateString(date=currentDate.getDate()) {
     // let date = currentDate.getDate()
     let month = date.getMonth() + 1
@@ -47,6 +50,7 @@ const size = {
     maxDown: '88vh',
 }
 
+// resize the chart.
 function resize(direction) {
     let chart = document.getElementById('chart')
     let newTop = '55vh'

@@ -54,6 +54,8 @@ let chart = mainContainer.createChild(am4charts.XYChart)
 let chart3D = mainContainer.createChild(am4charts.XYChart3D)
 setupChart(chart)
 setupChart(chart3D)
+
+// Setting up the two charts
 function setupChart(chart) {
     chart.height = am4core.percent(88)
     chart.width = am4core.percent(80)
@@ -69,6 +71,7 @@ function setupChart(chart) {
     chart.cursor.behavior = "none";
 }
 
+// Adding a scrollBar to the X axis to the first chart
 chart.scrollbarX = new am4charts.XYChartScrollbar();
 chart.scrollbarX.minHeight = 10
 chart.scrollbarX.unselectedOverlay.fill = am4core.color("#fff");
@@ -79,6 +82,7 @@ chart.scrollbarX.startGrip.icon.disabled = true;
 chart.scrollbarX.endGrip.icon.disabled = true;
 chart.zIndex = 2
 
+// Loading data label when data takes long to load
 let chartLabel = mainContainer.createChild(am4core.Label)
 chartLabel.text = "Loading Data...";
 chartLabel.height = am4core.percent(50)

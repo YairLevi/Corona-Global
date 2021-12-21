@@ -1,5 +1,8 @@
+
+// Graph line stroke size
 const STROKE_SIZE = 2
 
+// Is the input a valid option of the given list
 function is_valid_datalist_value(idDataList, inputValue) {
     let selector = "#" + idDataList + " option[value='" + inputValue + "']"
     let option = document.querySelector(selector);
@@ -7,6 +10,7 @@ function is_valid_datalist_value(idDataList, inputValue) {
     return false;
 }
 
+// delete everything inside of a given chart
 function emptyChart(chart) {
     while (chart.series.length) {
         chart.series.pop()
@@ -20,7 +24,7 @@ function emptyChart(chart) {
     currentDate.emptyCallBack()
 }
 
-
+// Graph 1 line series class
 class Line {
 
     constructor(input, color) {
@@ -76,9 +80,8 @@ class Line {
     }
 }
 
-
-
-
+// Graph 2 line series class. different from the first class in that its
+// variables can be static.
 class Line2 {
 
     constructor(input, color) {
@@ -136,16 +139,7 @@ class Line2 {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
+// first Line chart.
 class LineChart {
 
     constructor() {
@@ -210,7 +204,7 @@ class LineChart {
     }
 }
 
-// 14:26
+// Second line chart - used to compare between countries
 class ColumnChart {
     constructor() {
         this.variable = inputList('static-variables', 'Select variable')
@@ -274,7 +268,7 @@ class ColumnChart {
     }
 }
 
-
+// Special charts dispalyed
 class SpecialChart {
     constructor() {
         this.charts = [
@@ -479,6 +473,7 @@ class SpecialChart {
     }
 }
 
+// Init all charts and display the first one as default.
 const lineChart = new LineChart()
 const columnChart = new ColumnChart()
 const specialChart = new SpecialChart()

@@ -1,7 +1,11 @@
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
+
+// all the dates
 let dates;
+
+// current date class.
 class CurrentDate {
     constructor() {
         this.date = undefined
@@ -25,6 +29,7 @@ class CurrentDate {
 
 const currentDate = new CurrentDate()
 
+// init slider dates when ready
 datesData.then(data => {
     dates = getDates(new Date(data['first_date']), new Date(data['last_date']))
     let date = dates[0]
@@ -43,6 +48,7 @@ datesData.then(data => {
     fetchData('map', {date:toSend}).then(data => updateButtons(data))
 })
 
+// when mouse up on scrolling
 function onMouseUp(event) {
     if (dates !== undefined) {
         let date = currentDate.getDate()
@@ -61,6 +67,7 @@ function onMouseUp(event) {
     }
 }
 
+// when scrolling
 function onRangeChanged(event) {
     if (dates !== undefined) {
         let date = dates[Math.floor((dates.length - 1) * event.target.start)]
