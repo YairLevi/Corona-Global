@@ -36,10 +36,14 @@ function login() {
 }
 
 // adding a new measurement type as admin
-function addMsr() {
+async function addMsr() {
     let input = document.getElementById('msr-input')
     if (input.value !== '' && !(input.value.indexOf(' ') >= 0)) {
-        fetchData('addmsr', {msr: input.value})
+        let result = await fetchData('addmsr', {msr: input.value})
+        if (result['exist']) {
+            showPopup('sent-msr', 'Already Exists')
+            return
+        }
         datalistOptions('dynamic-variables', [input.value])
         datalistOptions('static-variables', [input.value])
         showPopup('sent-msr', 'Added New Measurement')

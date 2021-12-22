@@ -57,7 +57,7 @@ def send_update(params):
     queries.user_update(params['country'], params['date'], params['variable'], params['value'])
 
 def add_msr(params):
-    queries.add_new_measurement_type(params['msr'])
+    return queries.add_new_measurement_type(params['msr'])
 
 def approve(params):
     return queries.confirm_user_update([[params['country'], params['date'], params['variable'], params['value']]])
