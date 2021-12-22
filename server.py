@@ -130,7 +130,7 @@ class Server(SimpleHTTPRequestHandler):
             self.wfile.write(content)
 
 queries = oop_queries.Queries()
-queries.connect(sys.argv[1])
+queries.connect(sys.argv[1], sys.argv[2])
 end_dates = dates({})
 httpServer = HTTPServer(('localhost', 8000), Server)
 print('Server is running at http://localhost:8000/')
