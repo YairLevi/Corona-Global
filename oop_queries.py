@@ -411,15 +411,26 @@ class Queries:
             print("Error in check_admin: {}".format(error))
             self.close()
 
-    # An existing admin wants to add a new measurement type. We add this type to msrtype table.
+    # An existing admin wants to add a new measurement type.
+    # If the given measurement type is already exist in the DB --> return 'exist=True',
+    # and if it's a new measurement type we add this type to msrtype table, and return 'exist=False'.
     def add_new_measurement_type(self, variable_name):
         try:
+            # check if this variable is already exist:
+            query = """SELECT EXISTS (select 1 
+                                           from msrtype 
+                                           where msr_name = '{0}');"""
+            query = query.format(variable_name)
+            if pd.read_sql_query(query, self.__connection).values[0][0] == 1:
+                return {'exist': True}
+
             query = """INSERT INTO msrtype ({0}) VALUES (%s);"""
             query = query.format('msr_name')
             data = [variable_name]
             self.__cursor.execute(query, data)
             self.__connection.commit()
             print("Insert a new measurement type for mstype table successfully")
+            return {'exist': False}
         except mysql.connector.Error as error:
             print("Error in add_new_measurement_type: {}".format(error))
             self.close()
