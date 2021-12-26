@@ -6,7 +6,7 @@ const countryData = fetchData('countries', {})
 const variables = fetchData('variables', {})
 const datesData = fetchData('dates', {})
 
-function fetchData(route, queryParams) {
+async function fetchData(route, queryParams) {
     let params = ''
     for (let key of Object.keys(queryParams)) {
         let value = queryParams[key]
@@ -22,8 +22,19 @@ function fetchData(route, queryParams) {
             param += `${value}`
         params += `${param}&`}
     let request = `${url}${route}?${params}`
-    return fetch(request)
+    let result = await fetch(request)
         .then(response => response.json())
         .then(data => data)
         .catch(err => console.log(`Error: ${err}\nPlease Contact The Admins.`))
+    try {
+        if (result['connection_error']) {
+            alert('Connection to MySQL server closed. Please restart application.')
+        }
+    } catch (e) {}
+    try {
+        if (result.hasOwnProperty('error')) {
+            alert(`Error occured:\n${result['error']}`)
+        }
+    } catch (e) {}
+    return result
 }
