@@ -9,6 +9,7 @@ async function onSubmit() {
     let username = document.getElementById('mail').value
     let password = document.getElementById('password').value
     let result = await fetchData('admin', {username: username, password: password})
+    if (result.hasOwnProperty('error')) return
     if (result['is_admin']) login()
     else showPopup('incorrect', 'Incorrect Username Or Password')
 }
@@ -59,6 +60,7 @@ async function generateTable() {
     table.innerHTML = ''
     table.appendChild(createColumns(['Country', 'Date', 'Variable', 'New Value', '', '']))
     let requests = await fetchData('updates', {})
+    if (requests.hasOwnProperty('error')) return
     if (requests === null) return
     for (let country of Object.keys(requests)) {
         for (let dict of requests[country]) {
@@ -150,6 +152,7 @@ async function approveRequest(values) {
         variable: values[2],
         value: values[3],
     })
+    if (result.hasOwnProperty('error')) return
     if (result['isFound']) {
         showPopup('updated', 'Action Succeeded')
     } else {
@@ -166,6 +169,7 @@ async function denyRequest(values) {
         variable: values[2],
         value: values[3],
     })
+    if (result.hasOwnProperty('error')) return
     if (result['isFound']) {
         showPopup('updated', 'Action Succeeded')
     } else {

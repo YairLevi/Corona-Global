@@ -431,6 +431,7 @@ class SpecialChart {
         chartLabel.visible = true
         await fetchData('death_percentage', {})
             .then(data => {
+                if (data.hasOwnProperty('error')) return
                 let d = []
                 for (let cont of Object.keys(data)) {
                     d.push({
