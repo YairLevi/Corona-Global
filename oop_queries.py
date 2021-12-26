@@ -1,19 +1,19 @@
 import mysql.connector
-import numpy as np
 import pandas as pd
-import sys
 from datetime import datetime
 
 
+# Queries class --> contains all the queries for the UI.
 class Queries:
     def __init__(self):
         self.__connection = None
         self.__cursor = None
 
+    # Given user, password connect to the DB.
     def connect(self, user, password):
         try:
             self.__connection = mysql.connector.connect(host='localhost',
-                                                        database='covid_db',
+                                                        database='db13',
                                                         user=user,
                                                         password=password)  # put your MYSQL server password here.
 
@@ -27,14 +27,19 @@ class Queries:
 
         except mysql.connector.Error as error:
             print("Error in connect: {}".format(error))
+            return {'connection_error': True}
 
+        except Exception as error:
+            return {'error': error}
+
+    # Close the connection.
     def close(self):
         if self.__connection.is_connected():
             self.__cursor.close()
             self.__connection.close()
             print("MySQL connection is closed")
 
-    # return a dictionary that map each country to her continent and population.
+    # Return a dictionary that map each country to her continent and population.
     def get_countries(self) -> dict:
         try:
             results = pd.read_sql_query("""SELECT continent.continent_name, country.country_name, country.population 
@@ -48,11 +53,17 @@ class Queries:
                     'population': row[2]
                 }
             return my_dict
+
         except mysql.connector.Error as error:
             print("Error in get_countries: {}".format(error))
             self.close()
+            return {'connection_error': True}
 
-    # return a dictionary of dynamic variables (msrtype table) and static variables.
+        except Exception as error:
+            return {'error': error}
+
+    # Return a dictionary of dynamic variables (the variables in msrtype table)
+    # and static variables (the variables in country table).
     def get_variables(self) -> dict:
         try:
             dynamic_variables = pd.read_sql_query("""SELECT msr_name FROM msrtype;""", self.__connection)
@@ -73,7 +84,12 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in get_variables: {}".format(error))
             self.close()
+            return {'connection_error': True}
 
+        except Exception as error:
+            return {'error': error}
+
+    # Given a date --> change it's format.
     def change_date_format(self, date):
         if date is not None:
             if date.month < 10:
@@ -82,7 +98,7 @@ class Queries:
                 date = "{0}-{1}-{2}".format(date.year, date.month, date.day)
             return date
 
-    # get the first and the last date in the DB.
+    # Get the first and the last date in the DB.
     def get_dates(self) -> dict:
         try:
             last = pd.read_sql_query("""SELECT max(msr_timestamp) FROM measurement;""", self.__connection).values[0][0]
@@ -94,71 +110,63 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in get_dates: {}".format(error))
             self.close()
+            return {'connection_error': True}
 
-    # given a date, return the new cases, new deaths, total cases, total deaths in this date.
-    def get_map_variable(self, date) -> dict:
+        except Exception as error:
+            return {'error': error}
+
+    # Given a data and a variable, find for each country the last date (closest to the given date), that the country
+    # measured this variable, then take its value - and finally sum all the values, and return a single number.
+    # It is not guaranteed that every country necessarily measured every type of variable on any given date,
+    # so for the variable we are looking for, we must take the last value of the variable that each country
+    # measured that is closest to the date we want.
+    def get_info_of_variable(self, date, variable):
         try:
             query = """select sum(msr_value)
                     from measurement as m1 use index(mapIndex), 
                                             (select FKcountry_id as 'country_id', max(msr_timestamp) as 'max_timestamp'
                                                 from measurement USE INDEX(searchIndex)
                                                 where msr_timestamp between '{0}' and '{1}' 
-                                            and  FKmsr_id = (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'new_cases')
+                                            and FKmsr_id = (SELECT PKmsr_id FROM msrtype WHERE msr_name = '{2}')
                                                 group by FKcountry_id) as m2
                     where m1.msr_timestamp = m2.max_timestamp and m1.FKmsr_id = 
-                    (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'new_cases') and m1.FKcountry_id = m2.country_id
-
-                    union all 
-
-                    select sum(msr_value)
-                    from measurement as m1 use index(mapIndex), 
-                                            (select FKcountry_id as 'country_id', max(msr_timestamp) as 'max_timestamp'
-                                                from measurement USE INDEX(searchIndex)
-                                                where msr_timestamp between '{2}' and '{3}' 
-                                        and FKmsr_id = (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'total_cases')
-                                                group by FKcountry_id) as m2
-                    where m1.msr_timestamp = m2.max_timestamp and m1.FKmsr_id = 
-                    (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'total_cases') and m1.FKcountry_id = m2.country_id
-
-                    union all 
-
-                    select sum(msr_value)
-                    from measurement as m1 use index(mapIndex), 
-                                            (select FKcountry_id as 'country_id', max(msr_timestamp) as 'max_timestamp'
-                                                from measurement USE INDEX(searchIndex)
-                                                where msr_timestamp between '{4}' and '{5}' and
-                                                FKmsr_id = (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'new_deaths') 
-                                                group by FKcountry_id) as m2
-                    where m1.msr_timestamp = m2.max_timestamp and m1.FKmsr_id = 
-                    (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'new_deaths') and m1.FKcountry_id = m2.country_id
-
-                    union all 
-
-                    select sum(msr_value)
-                    from measurement as m1 use index(mapIndex), 
-                                            (select FKcountry_id as 'country_id', max(msr_timestamp) as 'max_timestamp'
-                                                from measurement USE INDEX(searchIndex)
-                                                where msr_timestamp between '{6}' and '{7}' and 
-                                               FKmsr_id = (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'total_deaths')
-                                                group by FKcountry_id) as m2
-                    where m1.msr_timestamp = m2.max_timestamp and m1.FKmsr_id = 
-                  (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'total_deaths') and m1.FKcountry_id = m2.country_id;"""
+                    (SELECT PKmsr_id FROM msrtype WHERE msr_name = '{3}') and m1.FKcountry_id = m2.country_id;"""
             date_dict = self.get_dates()
             first_date = date_dict['first_date']
-            query = query.format(first_date, date, first_date, date, first_date, date, first_date, date)
+            query = query.format(first_date, date, variable, variable)
 
-            results = pd.read_sql_query(query, self.__connection).values
-            my_dict = {
-                'new_cases': results[0][0],
-                'total_cases': results[1][0],
-                'new_deaths': results[2][0],
-                'total_deaths': results[3][0]
+            return pd.read_sql_query(query, self.__connection).values[0][0]
+
+        except mysql.connector.Error as error:
+            print("Error in get_info_of_variable: {}".format(error))
+            self.close()
+            return {'connection_error': True}
+
+        except Exception as error:
+            return {'error': error}
+
+    # This query is intended to return the values for the four labels of the UI map (new_cases, total_cases,
+    # new_deaths, total_deaths).
+    # Given a date, return the new cases, new deaths, total cases, total deaths in this date.
+    # It is not guaranteed that every country necessarily measured every type of variable on any given date,
+    # so for each variable we are looking for, we must take the last value of the variable that the country
+    # measured that is closest to the date we want.
+    def get_map_variable(self, date) -> dict:
+        try:
+            return {
+                'new_cases': self.get_info_of_variable(date, 'new_cases'),
+                'total_cases': self.get_info_of_variable(date, 'total_cases'),
+                'new_deaths': self.get_info_of_variable(date, 'new_deaths'),
+                'total_deaths': self.get_info_of_variable(date, 'total_deaths')
             }
-            return my_dict
 
         except mysql.connector.Error as error:
             print("Error in get_map_variable: {}".format(error))
             self.close()
+            return {'connection_error': True}
+
+        except Exception as error:
+            return {'error': error}
 
     # given a country and a variable, return a dictionary that maps msr_timestamp to the msr_value in each of the
     # timestamps that in the DB. 'variable' is a dynamic variable that his value takes from measurement table.
@@ -183,6 +191,10 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in get_data_for_scatter_line_graph: {}".format(error))
             self.close()
+            return {'connection_error': True}
+
+        except Exception as error:
+            return {'error': error}
 
     # given a country and a variable, return the value of this variable. 'variable' is a static variable
     # that takes from country table.
@@ -198,62 +210,21 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in get_static_data: {}".format(error))
             self.close()
+            return {'connection_error': True}
 
-    # # return a dictionary that maps each continent to the total deaths from the first date
-    # # until the last date in the continent. This query will display as a column graph.
-    # def total_deaths_in_each_continent(self):
-    #     try:
-    #         results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_deaths
-    #                                                 FROM measurement, country, msrtype, continent
-    #                                                 WHERE measurement.FKcountry_id = country.PKcountry_id
-    #                                                 AND measurement.FKmsr_id = msrtype.PKmsr_id
-    #                                                 AND country.FKcontinent_id = continent.PKcontinent_id
-    #                                                 AND msr_timestamp = (SELECT MAX(msr_timestamp) FROM measurement)
-    #                                                 AND FKmsr_id = (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'total_deaths')
-    #                                                 GROUP BY continent_name
-    #                                                 ORDER BY total_deaths DESC;""", self.__connection)
-    #         my_dict = {}
-    #         for row in results.values:
-    #             my_dict[row[0]] = row[1]
-    #         return my_dict
-    #     except mysql.connector.Error as error:
-    #         print("Error in total_deaths_in_each_continent: {}".format(error))
-    #         self.close()
-    #
-    # # find the five countries with the highest human development index, and for each of them return the total deaths
-    # # until the last date in the DB. This query will display as a column graph.
-    # def total_deaths_of_top_five_human_development_index(self):
-    #     try:
-    #         results = pd.read_sql_query("""SELECT DISTINCT country.country_name, developed.human_development_index,
-    #                                                 developed.msr_value AS 'total_deaths'
-    #                                                 FROM (SELECT DISTINCT PKcountry_id, human_development_index, msr_value
-    #                                                 FROM country,measurement, msrtype
-    #                                                 WHERE PKcountry_id = FKcountry_id AND FKmsr_id = PKmsr_id AND
-    #                                                 FKmsr_id = (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'total_deaths')
-    #                                                 AND msr_timestamp = (SELECT MAX(msr_timestamp) FROM measurement)
-    #                                                 ORDER BY human_development_index DESC LIMIT 5) AS developed, measurement, country
-    #                                                 WHERE developed.PKcountry_id = measurement.FKcountry_id
-    #                                                 AND developed.PKcountry_id = country.PKcountry_id
-    #                                                 LIMIT 5;""", self.__connection)
-    #         country_dict = {}
-    #         for row in results.values:
-    #             country_dict[row[0]] = {
-    #                 'human_development_index': row[1],
-    #                 'total_deaths': row[2]
-    #             }
-    #         return country_dict
-    #
-    #     except mysql.connector.Error as error:
-    #         print("Error in total_deaths_of_top_five_human_development_index: {}".format(error))
-    #         self.close()
+        except Exception as error:
+            return {'error': error}
 
     # percentage cases out of the total population in each continent, according to the last date in the DB.
     # This query will display as a column graph.
     def percentage_cases_out_of_total_population_in_each_continent(self):
         try:
-            results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_cases, continental_population AS total_population, 100 * SUM(msr_value) / continental_population AS cases_percentage
+            results = pd.read_sql_query("""SELECT continent_name, SUM(msr_value) AS total_cases, 
+                                            continental_population AS total_population, 
+                                            100 * SUM(msr_value) / continental_population AS cases_percentage
                                             FROM (WITH last_msr AS (
-                                                 SELECT *, ROW_NUMBER () OVER (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
+                                                 SELECT *, ROW_NUMBER () OVER 
+                                                 (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
                                                  FROM measurement  WHERE FKmsr_id = (SELECT PKmsr_id
                                                  FROM msrtype WHERE msr_name = 'total_cases')
                                                 ) SELECT last_msr.*, country.FKcontinent_id FROM last_msr, country	
@@ -280,6 +251,10 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in percentage_cases_out_of_total_population_in_each_continent: {}".format(error))
             self.close()
+            return {'connection_error': True}
+
+        except Exception as error:
+            return {'error': error}
 
     # Percentage of all verified deaths out of the total cases, in each of the 5 countries with the highest
     # percentage of the population over the age of 70 on the latest date in the DB.
@@ -327,16 +302,22 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in percentage_of_verified_deaths_out_of_total_cases: {}".format(error))
             self.close()
+            return {'connection_error': True}
+
+        except Exception as error:
+            return {'error': error}
 
     # Percentage of verified cases in each continent out of all the global verified cases at the latest date in the DB.
     # This query will display as Pie Chart.
     def percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent(self):
         try:
-            results = pd.read_sql_query("""SELECT cases_per_continent.continent_name, 100*total_cases_continent/global_total_cases AS percentage
+            results = pd.read_sql_query("""SELECT cases_per_continent.continent_name, 
+                                            100*total_cases_continent/global_total_cases AS percentage
                                             FROM (
                                             SELECT continent_name, SUM(msr_value) AS total_cases_continent
                                             FROM (WITH last_msr AS (
-                                                    SELECT *, ROW_NUMBER () OVER (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
+                                                    SELECT *, ROW_NUMBER () OVER 
+                                                    (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
                                                     FROM measurement  WHERE FKmsr_id = (SELECT PKmsr_id
                                                  FROM msrtype WHERE msr_name = 'total_cases')
                                                 ) SELECT last_msr.*, country.FKcontinent_id FROM last_msr, country	
@@ -346,9 +327,11 @@ class Queries:
                                             GROUP BY continent_name) AS cases_per_continent,
                                             (SELECT SUM(msr_value) AS global_total_cases
                                             FROM (WITH last_msr AS (
-                                                SELECT *, ROW_NUMBER () OVER (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
+                                                SELECT *, ROW_NUMBER () OVER 
+                                                    (PARTITION BY FKcountry_id ORDER BY msr_timestamp DESC) rn
                                                     FROM measurement 
-                                                    WHERE FKmsr_id = (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'total_cases')
+                                                    WHERE FKmsr_id = 
+                                                        (SELECT PKmsr_id FROM msrtype WHERE msr_name = 'total_cases')
                                                 ) SELECT last_msr.*, country.FKcontinent_id FROM last_msr, country	
                                                 WHERE rn = 1
                                                 AND PKcountry_id = FKcountry_id) AS m) AS total_continental_cases
@@ -362,8 +345,12 @@ class Queries:
                 "Error in percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent: {}".format(
                     error))
             self.close()
+            return {'connection_error': True}
 
-    # Queries for update:
+        except Exception as error:
+            return {'error': error}
+
+    # The queries from here to the end of the file allow the (admin / user) to make updates on the site:
 
     # the user wants to upload a new data. For example: Israel, 2020-02-24, 'new_cases', 100.
     # We add this data to update table. This data will need to be approved later, by an admin.
@@ -391,6 +378,10 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in user_update: {}".format(error))
             self.close()
+            return {'connection_error': True}
+
+        except Exception as error:
+            return {'error': error}
 
     # An admin wants to connect to the system, and we need to make sure he is one of the existing admins in the system.
     # If this admin exists in the DB return True, otherwise return False.
@@ -410,6 +401,10 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in check_admin: {}".format(error))
             self.close()
+            return {'connection_error': True}
+
+        except Exception as error:
+            return {'error': error}
 
     # An existing admin wants to add a new measurement type.
     # If the given measurement type is already exist in the DB --> return 'exist=True',
@@ -431,9 +426,14 @@ class Queries:
             self.__connection.commit()
             print("Insert a new measurement type for mstype table successfully")
             return {'exist': False}
+
         except mysql.connector.Error as error:
             print("Error in add_new_measurement_type: {}".format(error))
             self.close()
+            return {'connection_error': True}
+
+        except Exception as error:
+            return {'error': error}
 
     # An existing admin, clicked on some user updates, and wants to approved them, so he send a list of
     # updates, that we will need to delete from update table, and add them to measurements table.
@@ -468,9 +468,13 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in confirm_user_update: {}".format(error))
             self.close()
+            return {'connection_error': True}
 
         except IndexError:
             return {'isFound': False}
+
+        except Exception as error:
+            return {'error': error}
 
     # Update the given measurement in the measurement table --> check if we need to update an existing measurement,
     # or if we have to insert a new measurement. After that, we check if we update a measurement that correlated to
@@ -556,6 +560,7 @@ class Queries:
         except Exception as error:
             print("Error in user_update: {}".format(error))
             self.close()
+            return {'connection_error': True}
 
     # After inserting to measurement table --> update the next measurements -
     # from the given date until the last date in the DB.
@@ -578,6 +583,7 @@ class Queries:
         except Exception as error:
             print("Error in update_next_measurements: {}".format(error))
             self.close()
+            return {'connection_error': True}
 
     # Return amount of updates from the update table that will be display for the admin
     def get_updates_for_display(self) -> dict:
@@ -625,6 +631,10 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in get_updates_for_display: {}".format(error))
             self.close()
+            return {'connection_error': True}
+
+        except Exception as error:
+            return {'error': error}
 
     # For example: if we have a country that the last measurement of 'new_cases' was in date 'x' and
     # this country didn't measure 'total cases' from date 'x' until the last date in the DB -->
@@ -656,9 +666,13 @@ class Queries:
 
             return False
 
-        except Exception as error:
+        except mysql.connector.Error as error:
             print("Error in check_for_adding_another_measurement: {}".format(error))
             self.close()
+            return {'connection_error': True}
+
+        except Exception as error:
+            return {'error': error}
 
     # An existing admin, clicked on some user updates, and wants to reject them, so he send a list of
     # updates, that we will need to delete from update table, and add them to measurements table.
@@ -687,5 +701,10 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in reject_user_update: {}".format(error))
             self.close()
+            return {'connection_error': True}
+
         except IndexError:
             return {'isFound': False}
+
+        except Exception as error:
+            return {'error': error}

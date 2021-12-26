@@ -186,8 +186,8 @@ if __name__ == '__main__':
             db_Info = connection.get_server_info()
             print("Connected to MySQL Server version ", db_Info)
             cursor = connection.cursor()
-            cursor.execute("""create database covid_db;""")
-            cursor.execute("""use covid_db;""")
+            cursor.execute("""create database db13;""")
+            cursor.execute("""use db13;""")
             cursor.execute("select database();")
             record = cursor.fetchone()
             print("You're connected to database: ", record)
@@ -306,6 +306,10 @@ if __name__ == '__main__':
 
     except mysql.connector.Error as error:
         print("Error in MySQL: {}".format(error))
+
+    except Exception as error:
+        print("Error in MySQL: {}".format(error))
+
     finally:
         if connection.is_connected():
             cursor.close()
