@@ -48,6 +48,11 @@ datesData.then(data => {
     fetchData('map', {date:toSend}).then(data => updateButtons(data))
 })
 
+function updateRange(data) {
+    dates = getDates(new Date(data['first_date']), new Date(data['last_date']))
+    onMouseUp()
+}
+
 // when mouse up on scrolling
 function onMouseUp(event) {
     if (dates !== undefined) {

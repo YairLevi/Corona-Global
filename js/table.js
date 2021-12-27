@@ -159,6 +159,8 @@ async function approveRequest(values) {
         showPopup('updated', 'Failed. Query has been taken care of.')
     }
     generateTable()
+    let data = await fetchData('dates', {})
+    updateRange(data)
 }
 
 // denying a request.
