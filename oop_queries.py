@@ -131,8 +131,7 @@ class Queries:
                                                 group by FKcountry_id) as m2
                     where m1.msr_timestamp = m2.max_timestamp and m1.FKmsr_id = 
                     (SELECT PKmsr_id FROM msrtype WHERE msr_name = '{3}') and m1.FKcountry_id = m2.country_id;"""
-            date_dict = self.get_dates()
-            first_date = date_dict['first_date']
+            first_date = pd.read_sql_query("""SELECT min(msr_timestamp) FROM measurement;""", self.__connection).values[0][0]
             query = query.format(first_date, date, variable, variable)
 
             return pd.read_sql_query(query, self.__connection).values[0][0]
@@ -140,10 +139,10 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in get_info_of_variable: {}".format(error))
             self.close()
-            return {'connection_error': True}
+            raise mysql.connector.Error
 
-        except Exception as error:
-            return {'error': str(error)}
+        except Exception:
+            raise Exception
 
     # This query is intended to return the values for the four labels of the UI map (new_cases, total_cases,
     # new_deaths, total_deaths).
@@ -530,7 +529,8 @@ class Queries:
 
             # update the next measurements - from the given date until the last date in the DB:
             msr_id_query = """"""
-            last_date = self.get_dates()['last_date']
+            last_date = pd.read_sql_query("""SELECT max(msr_timestamp) FROM measurement;""",
+                                          self.__connection).values[0][0]
             if variable in ['new_cases', 'total_cases']:
                 msr_id_query = """select PKmsr_id FROM msrtype WHERE msr_name = 'total_cases';"""
             elif variable in ['new_deaths', 'total_deaths']:
@@ -557,10 +557,13 @@ class Queries:
 
             self.update_next_measurements(date, last_date, country_id, msr_id, (value - last_value))
 
-        except Exception as error:
-            print("Error in user_update: {}".format(error))
+        except mysql.connector.Error as error:
+            print("Error in update_measurements_table: {}".format(error))
             self.close()
-            return {'connection_error': str(error)}
+            raise mysql.connector.Error
+
+        except Exception:
+            raise Exception
 
     # After inserting to measurement table --> update the next measurements -
     # from the given date until the last date in the DB.
@@ -580,10 +583,13 @@ class Queries:
             print("current_date =  {}".format(current_date))
             print("last_date = {}".format(last_date))
 
-        except Exception as error:
+        except mysql.connector.Error as error:
             print("Error in update_next_measurements: {}".format(error))
             self.close()
-            return {'connection_error': True}
+            raise mysql.connector.Error
+
+        except Exception:
+            raise Exception
 
     # Return amount of updates from the update table that will be display for the admin
     def get_updates_for_display(self) -> dict:
@@ -669,10 +675,10 @@ class Queries:
         except mysql.connector.Error as error:
             print("Error in check_for_adding_another_measurement: {}".format(error))
             self.close()
-            return {'connection_error': True}
+            raise mysql.connector.Error
 
-        except Exception as error:
-            return {'error': str(error)}
+        except Exception:
+            raise Exception
 
     # An existing admin, clicked on some user updates, and wants to reject them, so he send a list of
     # updates, that we will need to delete from update table, and add them to measurements table.
