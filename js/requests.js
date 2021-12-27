@@ -28,12 +28,14 @@ async function fetchData(route, queryParams) {
         .catch(err => console.log(`Error: ${err}\nPlease Contact The Admins.`))
     try {
         if (result['connection_error']) {
-            alert('Connection to MySQL server closed. Please restart application.')
+            alert('Connection to MySQL server closed. Please restart the application server.')
+            window.location.reload()
         }
     } catch (e) {}
     try {
         if (result.hasOwnProperty('error')) {
             alert(`Error occured:\n${result['error']}`)
+            window.location.reload()
         }
     } catch (e) {}
     return result

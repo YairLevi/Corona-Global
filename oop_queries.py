@@ -30,7 +30,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # Close the connection.
     def close(self):
@@ -60,7 +60,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # Return a dictionary of dynamic variables (the variables in msrtype table)
     # and static variables (the variables in country table).
@@ -87,7 +87,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # Given a date --> change it's format.
     def change_date_format(self, date):
@@ -113,7 +113,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # Given a data and a variable, find for each country the last date (closest to the given date), that the country
     # measured this variable, then take its value - and finally sum all the values, and return a single number.
@@ -143,7 +143,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # This query is intended to return the values for the four labels of the UI map (new_cases, total_cases,
     # new_deaths, total_deaths).
@@ -166,7 +166,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # given a country and a variable, return a dictionary that maps msr_timestamp to the msr_value in each of the
     # timestamps that in the DB. 'variable' is a dynamic variable that his value takes from measurement table.
@@ -194,7 +194,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # given a country and a variable, return the value of this variable. 'variable' is a static variable
     # that takes from country table.
@@ -213,7 +213,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # percentage cases out of the total population in each continent, according to the last date in the DB.
     # This query will display as a column graph.
@@ -254,7 +254,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # Percentage of all verified deaths out of the total cases, in each of the 5 countries with the highest
     # percentage of the population over the age of 70 on the latest date in the DB.
@@ -305,7 +305,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # Percentage of verified cases in each continent out of all the global verified cases at the latest date in the DB.
     # This query will display as Pie Chart.
@@ -348,7 +348,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # The queries from here to the end of the file allow the (admin / user) to make updates on the site:
 
@@ -381,7 +381,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # An admin wants to connect to the system, and we need to make sure he is one of the existing admins in the system.
     # If this admin exists in the DB return True, otherwise return False.
@@ -404,7 +404,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # An existing admin wants to add a new measurement type.
     # If the given measurement type is already exist in the DB --> return 'exist=True',
@@ -433,7 +433,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # An existing admin, clicked on some user updates, and wants to approved them, so he send a list of
     # updates, that we will need to delete from update table, and add them to measurements table.
@@ -474,7 +474,7 @@ class Queries:
             return {'isFound': False}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # Update the given measurement in the measurement table --> check if we need to update an existing measurement,
     # or if we have to insert a new measurement. After that, we check if we update a measurement that correlated to
@@ -560,7 +560,7 @@ class Queries:
         except Exception as error:
             print("Error in user_update: {}".format(error))
             self.close()
-            return {'connection_error': True}
+            return {'connection_error': str(error)}
 
     # After inserting to measurement table --> update the next measurements -
     # from the given date until the last date in the DB.
@@ -634,7 +634,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # For example: if we have a country that the last measurement of 'new_cases' was in date 'x' and
     # this country didn't measure 'total cases' from date 'x' until the last date in the DB -->
@@ -672,7 +672,7 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
 
     # An existing admin, clicked on some user updates, and wants to reject them, so he send a list of
     # updates, that we will need to delete from update table, and add them to measurements table.
@@ -707,4 +707,4 @@ class Queries:
             return {'isFound': False}
 
         except Exception as error:
-            return {'error': error}
+            return {'error': str(error)}
