@@ -120,6 +120,7 @@ class Queries:
     # It is not guaranteed that every country necessarily measured every type of variable on any given date,
     # so for the variable we are looking for, we must take the last value of the variable that each country
     # measured that is closest to the date we want.
+    # This query is intended for: total_cases / total_deaths.
     def get_info_of_variable(self, date, variable):
         try:
             query = """select sum(msr_value)
@@ -131,7 +132,8 @@ class Queries:
                                                 group by FKcountry_id) as m2
                     where m1.msr_timestamp = m2.max_timestamp and m1.FKmsr_id = 
                     (SELECT PKmsr_id FROM msrtype WHERE msr_name = '{3}') and m1.FKcountry_id = m2.country_id;"""
-            first_date = pd.read_sql_query("""SELECT min(msr_timestamp) FROM measurement;""", self.__connection).values[0][0]
+            first_date = \
+            pd.read_sql_query("""SELECT min(msr_timestamp) FROM measurement;""", self.__connection).values[0][0]
             query = query.format(first_date, date, variable, variable)
 
             return pd.read_sql_query(query, self.__connection).values[0][0]
@@ -144,18 +146,38 @@ class Queries:
         except Exception:
             raise Exception
 
+    # Given a data and a variable, find for each country the value of this variable -
+    # and sum the values. In contrast to the 'get_info_of_variable' query, this query
+    # checking the value of the given variable, exactly on the given date and doesn't look for the closest date
+    # to the given date (As the 'get_info_of_variable' query does).
+    # This query is intended for: new_cases / new_deaths.
+    def get_info_of_variable_in_specific_date(self, date, variable):
+        try:
+            query = """SELECT sum(msr_value) FROM measurement use index(searchIndex)
+                        where msr_timestamp = '{}' and FKmsr_id = (select PKmsr_id from msrtype where msr_name = '{}');"""
+            query = query.format(date, variable)
+            return pd.read_sql_query(query, self.__connection).values[0][0]
+
+        except mysql.connector.Error as error:
+            print("Error in get_info_of_variable_in_specific_date: {}".format(error))
+            self.close()
+            raise mysql.connector.Error
+
+        except Exception:
+            raise Exception
+
     # This query is intended to return the values for the four labels of the UI map (new_cases, total_cases,
     # new_deaths, total_deaths).
     # Given a date, return the new cases, new deaths, total cases, total deaths in this date.
     # It is not guaranteed that every country necessarily measured every type of variable on any given date,
-    # so for each variable we are looking for, we must take the last value of the variable that the country
-    # measured that is closest to the date we want.
+    # so for [total cases, total deaths] variables, we must take the last value of these variables that each country
+    # measured in a date that is closest to the date we want.
     def get_map_variable(self, date) -> dict:
         try:
             return {
-                'new_cases': self.get_info_of_variable(date, 'new_cases'),
+                'new_cases': self.get_info_of_variable_in_specific_date(date, 'new_cases'),
                 'total_cases': self.get_info_of_variable(date, 'total_cases'),
-                'new_deaths': self.get_info_of_variable(date, 'new_deaths'),
+                'new_deaths': self.get_info_of_variable_in_specific_date(date, 'new_deaths'),
                 'total_deaths': self.get_info_of_variable(date, 'total_deaths')
             }
 
