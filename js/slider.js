@@ -50,7 +50,7 @@ datesData.then(data => {
 
 function updateRange(data) {
     dates = getDates(new Date(data['first_date']), new Date(data['last_date']))
-    let date = dates[Math.floor((dates.length - 1) * event.target.start)]
+    let date = dates[Math.floor((dates.length - 1) * slider.start)]
     currentDate.setDate(date)
     onMouseUp()
 }
