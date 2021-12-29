@@ -15,7 +15,8 @@ class Queries:
             self.__connection = mysql.connector.connect(host='localhost',
                                                         database='db13',
                                                         user=user,
-                                                        password=password)  # put your MYSQL server password here.
+                                                        password=password,
+                                                        use_unicode=True, charset="utf8")  # put your MYSQL server password here.
 
             if self.__connection.is_connected():
                 db_Info = self.__connection.get_server_info()
