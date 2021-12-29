@@ -30,7 +30,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in connect: {}".format(error))
+            return {'error': "Error in connect: {}".format(error)}
 
     # Close the connection.
     def close(self):
@@ -60,7 +61,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in get_countries: {}".format(error))
+            return {'error': "Error in get_countries: {}".format(error)}
 
     # Return a dictionary of dynamic variables (the variables in msrtype table)
     # and static variables (the variables in country table).
@@ -87,7 +89,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in get_variables: {}".format(error))
+            return {'error': "Error in get_variables: {}".format(error)}
 
     # Given a date --> change it's format.
     def change_date_format(self, date):
@@ -113,7 +116,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in get_dates: {}".format(error))
+            return {'error': "Error in get_dates: {}".format(error)}
 
     # Given a data and a variable, find for each country the last date (closest to the given date), that the country
     # measured this variable, then take its value - and finally sum all the values, and return a single number.
@@ -133,7 +137,7 @@ class Queries:
                     where m1.msr_timestamp = m2.max_timestamp and m1.FKmsr_id = 
                     (SELECT PKmsr_id FROM msrtype WHERE msr_name = '{3}') and m1.FKcountry_id = m2.country_id;"""
             first_date = \
-            pd.read_sql_query("""SELECT min(msr_timestamp) FROM measurement;""", self.__connection).values[0][0]
+                pd.read_sql_query("""SELECT min(msr_timestamp) FROM measurement;""", self.__connection).values[0][0]
             query = query.format(first_date, date, variable, variable)
 
             return pd.read_sql_query(query, self.__connection).values[0][0]
@@ -143,8 +147,9 @@ class Queries:
             self.close()
             raise mysql.connector.Error
 
-        except Exception:
-            raise Exception
+        except Exception as error:
+            print("Error in get_info_of_variable: {}".format(error))
+            raise Exception("Error in get_info_of_variable: {}".format(error))
 
     # Given a data and a variable, find for each country the value of this variable -
     # and sum the values. In contrast to the 'get_info_of_variable' query, this query
@@ -154,7 +159,8 @@ class Queries:
     def get_info_of_variable_in_specific_date(self, date, variable):
         try:
             query = """SELECT sum(msr_value) FROM measurement use index(searchIndex)
-                        where msr_timestamp = '{}' and FKmsr_id = (select PKmsr_id from msrtype where msr_name = '{}');"""
+                        where msr_timestamp = '{}' and FKmsr_id = 
+                                                            (select PKmsr_id from msrtype where msr_name = '{}');"""
             query = query.format(date, variable)
             return pd.read_sql_query(query, self.__connection).values[0][0]
 
@@ -163,8 +169,9 @@ class Queries:
             self.close()
             raise mysql.connector.Error
 
-        except Exception:
-            raise Exception
+        except Exception as error:
+            print("Error in get_info_of_variable_in_specific_date: {}".format(error))
+            raise Exception("Error in get_info_of_variable_in_specific_date: {}".format(error))
 
     # This query is intended to return the values for the four labels of the UI map (new_cases, total_cases,
     # new_deaths, total_deaths).
@@ -187,7 +194,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in get_map_variable: {}".format(error))
+            return {'error': "Error in get_map_variable: {}".format(error)}
 
     # given a country and a variable, return a dictionary that maps msr_timestamp to the msr_value in each of the
     # timestamps that in the DB. 'variable' is a dynamic variable that his value takes from measurement table.
@@ -215,7 +223,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in get_data_for_scatter_line_graph: {}".format(error))
+            return {'error': "Error in get_data_for_scatter_line_graph: {}".format(error)}
 
     # given a country and a variable, return the value of this variable. 'variable' is a static variable
     # that takes from country table.
@@ -234,7 +243,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in get_static_data: {}".format(error))
+            return {'error': "Error in get_static_data: {}".format(error)}
 
     # percentage cases out of the total population in each continent, according to the last date in the DB.
     # This query will display as a column graph.
@@ -275,7 +285,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in percentage_cases_out_of_total_population_in_each_continent: {}".format(error))
+            return {'error': "Error in percentage_cases_out_of_total_population_in_each_continent: {}".format(error)}
 
     # Percentage of all verified deaths out of the total cases, in each of the 5 countries with the highest
     # percentage of the population over the age of 70 on the latest date in the DB.
@@ -326,7 +337,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in percentage_of_verified_deaths_out_of_total_cases: {}".format(error))
+            return {'error': "Error in percentage_of_verified_deaths_out_of_total_cases: {}".format(error)}
 
     # Percentage of verified cases in each continent out of all the global verified cases at the latest date in the DB.
     # This query will display as Pie Chart.
@@ -369,7 +381,12 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print(
+                "Error in percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent: {}".format(
+                    error))
+            return {'error': "Error in "
+                             "percentage_of_verified_cases_out_of_all_global_verified_cases_for_each_continent: "
+                             " {}".format(error)}
 
     # The queries from here to the end of the file allow the (admin / user) to make updates on the site:
 
@@ -394,7 +411,6 @@ class Queries:
             data = [str(country_id), date, str(msr_id), str(value)]
             self.__cursor.execute(query, data)
             self.__connection.commit()
-            print("Insert an update for measurement_update table successfully")
 
         except mysql.connector.Error as error:
             print("Error in user_update: {}".format(error))
@@ -402,7 +418,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in user_update: {}".format(error))
+            return {'error': "Error in user_update: {}".format(error)}
 
     # An admin wants to connect to the system, and we need to make sure he is one of the existing admins in the system.
     # If this admin exists in the DB return True, otherwise return False.
@@ -413,11 +430,8 @@ class Queries:
                                 where admin_name = '{0}' and admin_pwd = '{1}')"""
             query = query.format(admin_name, admin_password)
             flag = pd.read_sql_query(query, self.__connection).values[0][0]
-            print(flag)
             if flag > 0:
-                print("this admin exists in the system")
                 return True
-            print("this admin doesn't exist in the system")
             return False
         except mysql.connector.Error as error:
             print("Error in check_admin: {}".format(error))
@@ -425,7 +439,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in check_admin: {}".format(error))
+            return {'error': "Error in check_admin: {}".format(error)}
 
     # An existing admin wants to add a new measurement type.
     # If the given measurement type is already exist in the DB --> return 'exist=True',
@@ -445,7 +460,6 @@ class Queries:
             data = [variable_name]
             self.__cursor.execute(query, data)
             self.__connection.commit()
-            print("Insert a new measurement type for mstype table successfully")
             return {'exist': False}
 
         except mysql.connector.Error as error:
@@ -454,7 +468,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in add_new_measurement_type: {}".format(error))
+            return {'error': "Error in add_new_measurement_type: {}".format(error)}
 
     # An existing admin, clicked on some user updates, and wants to approved them, so he send a list of
     # updates, that we will need to delete from update table, and add them to measurements table.
@@ -465,37 +480,47 @@ class Queries:
             for row in update_list:
                 country_name, date, msr_name, msr_value = row[0], row[1], row[2], row[3]
 
-                query = """select FKcountry_id,msr_timestamp,FKmsr_id,msr_value 
-                from measurement_update where FKcountry_id = (select PKcountry_id from country where country_name = '{0}')
-                 and msr_timestamp = '{1}' and FKmsr_id = (select PKmsr_id from msrtype where msr_name = '{2}') 
-                 and msr_value = {3};"""
+                # get country_id, mr_id:
+                country_id = pd.read_sql_query("""select PKcountry_id from country where country_name = '{}'""".
+                                               format(country_name), self.__connection).values[0][0]
+                msr_id = pd.read_sql_query("""select PKmsr_id from msrtype where msr_name = '{}'""".
+                                           format(msr_name), self.__connection).values[0][0]
 
-                query = query.format(country_name, date, msr_name, msr_value)
-                row = pd.read_sql_query(query, self.__connection).values[0]
+                # check if this measurement exist in measurement_update table:
+                flag = pd.read_sql_query("""SELECT EXISTS(select 1
+                                                           from measurement_update where FKcountry_id = {0}
+                                                           and msr_timestamp = '{1}' 
+                                                           and FKmsr_id = {2} 
+                                                           and msr_value = {3})"""
+                                         .format(country_id, date, msr_id, msr_value), self.__connection).values[0][0]
 
-                # add this row to measurement table:
-                date = self.change_date_format(row[1])
-                self.update_measurements_table(row[0], date, row[2], row[3])
+                if flag > 0:
+                    # this measurement exist in measurement_update table
 
-                # delete this row from measurement_update table:
-                query = """delete from measurement_update where FKcountry_id = {0} and msr_timestamp = '{1}'
-                and FKmsr_id = {2} and msr_value = {3};"""
-                query = query.format(row[0], date, row[2], row[3])
-                self.__cursor.execute(query)
-                self.__connection.commit()
-                print("delete row from measurement_update table and add this row to measurement table, successfully")
+                    # add this row to measurement table:
+                    self.update_measurements_table(country_id, date, msr_id, float(msr_value))
+
+                    # delete this row from measurement_update table:
+                    query = """delete from measurement_update where FKcountry_id = {0} and msr_timestamp = '{1}'
+                                            and FKmsr_id = {2} and msr_value = {3};"""
+                    query = query.format(country_id, date, msr_id, msr_value)
+                    self.__cursor.execute(query)
+                    self.__connection.commit()
+
+                else:
+                    # this measurement isn't exist in measurement_update table
+                    return {'isFound': False}
 
             return {'isFound': True}
+
         except mysql.connector.Error as error:
             print("Error in confirm_user_update: {}".format(error))
             self.close()
             return {'connection_error': True}
 
-        except IndexError:
-            return {'isFound': False}
-
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in confirm_user_update: {}".format(error))
+            return {'error': "Error in confirm_user_update: {}".format(error)}
 
     # Update the given measurement in the measurement table --> check if we need to update an existing measurement,
     # or if we have to insert a new measurement. After that, we check if we update a measurement that correlated to
@@ -521,7 +546,6 @@ class Queries:
             last_value = 0
 
             if not pd.read_sql_query(query, self.__connection).values[0]:
-                print("add a new measurement!")
                 query = """INSERT INTO measurement ({0}) VALUES (%s, %s, %s, %s);"""
                 columns = ['FKcountry_id', 'msr_timestamp', 'FKmsr_id', 'msr_value']
                 query = query.format(','.join(columns))
@@ -529,7 +553,6 @@ class Queries:
                 self.__cursor.execute(query, data)
                 self.__connection.commit()
             else:
-                print("update an existing measurement!")
                 # get the last msr value:
                 if variable in ['new_cases', 'new_deaths', 'total_cases', 'total_deaths']:
                     last_value_query = """select msr_value from measurement where FKcountry_id = {0} and FKmsr_id = {1} 
@@ -543,8 +566,6 @@ class Queries:
                 query = query.format(value, date, country_id, msr_id)
                 self.__cursor.execute(query)
                 self.__connection.commit()
-
-            print("Insert an update for measurement table successfully")
 
             if variable not in ['new_cases', 'new_deaths', 'total_cases', 'total_deaths']:
                 return
@@ -584,8 +605,8 @@ class Queries:
             self.close()
             raise mysql.connector.Error
 
-        except Exception:
-            raise Exception
+        except Exception as error:
+            raise Exception("Error in update_measurements_table: {}".format(error))
 
     # After inserting to measurement table --> update the next measurements -
     # from the given date until the last date in the DB.
@@ -594,24 +615,20 @@ class Queries:
         try:
             new_value = "msr_value + {0}"
             new_value = new_value.format(value)
-            print(new_value)
 
             query = """update measurement set msr_value = {0} 
                        where FKcountry_id = {1} and FKmsr_id = {2} and msr_timestamp between '{3}' and '{4}';"""
             query = query.format(new_value, country_id, msr_id, current_date, last_date)
-            print(query)
             self.__cursor.execute(query)
             self.__connection.commit()
-            print("current_date =  {}".format(current_date))
-            print("last_date = {}".format(last_date))
 
         except mysql.connector.Error as error:
             print("Error in update_next_measurements: {}".format(error))
             self.close()
             raise mysql.connector.Error
 
-        except Exception:
-            raise Exception
+        except Exception as error:
+            raise Exception("Error in update_next_measurements: {}".format(error))
 
     # Return amount of updates from the update table that will be display for the admin
     def get_updates_for_display(self) -> dict:
@@ -662,7 +679,8 @@ class Queries:
             return {'connection_error': True}
 
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in get_updates_for_display: {}".format(error))
+            return {'error': "Error in get_updates_for_display: {}".format(error)}
 
     # For example: if we have a country that the last measurement of 'new_cases' was in date 'x' and
     # this country didn't measure 'total cases' from date 'x' until the last date in the DB -->
@@ -699,8 +717,8 @@ class Queries:
             self.close()
             raise mysql.connector.Error
 
-        except Exception:
-            raise Exception
+        except Exception as error:
+            raise Exception("Error in check_for_adding_another_measurement: {}".format(error))
 
     # An existing admin, clicked on some user updates, and wants to reject them, so he send a list of
     # updates, that we will need to delete from update table, and add them to measurements table.
@@ -711,19 +729,32 @@ class Queries:
             for row in update_list:
                 country_name, date, msr_name, msr_value = row[0], row[1], row[2], row[3]
 
-                # delete this row from measurement_update table:
-                query = """select FKcountry_id,msr_timestamp,FKmsr_id,msr_value 
-                                from measurement_update where FKcountry_id = (select PKcountry_id from country where country_name = '{0}')
-                                 and msr_timestamp = '{1}' and FKmsr_id = (select PKmsr_id from msrtype where msr_name = '{2}') 
-                                 and msr_value = {3};"""
+                # get country_id, mr_id:
+                country_id = pd.read_sql_query("""select PKcountry_id from country where country_name = '{}'""".
+                                               format(country_name), self.__connection).values[0][0]
+                msr_id = pd.read_sql_query("""select PKmsr_id from msrtype where msr_name = '{}'""".
+                                           format(msr_name), self.__connection).values[0][0]
 
-                query = query.format(country_name, date, msr_name, msr_value)
-                row = pd.read_sql_query(query, self.__connection).values[0]
-                query = """delete from measurement_update where FKcountry_id = {0} and msr_timestamp = '{1}'
-                                and FKmsr_id = {2} and msr_value = {3};"""
-                query = query.format(row[0], date, row[2], row[3])
-                self.__cursor.execute(query)
-                self.__connection.commit()
+                # check if this measurement exist in measurement_update table:
+                flag = pd.read_sql_query("""SELECT EXISTS(select 1
+                                            from measurement_update where FKcountry_id = {0}
+                                            and msr_timestamp = '{1}' 
+                                            and FKmsr_id = {2} 
+                                            and msr_value = {3})"""
+                                         .format(country_id, date, msr_id, msr_value), self.__connection).values[0][0]
+
+                if flag > 0:
+                    # this measurement exist in measurement_update table
+                    # delete this row from measurement_update table:
+                    query = """delete from measurement_update where FKcountry_id = {0} and msr_timestamp = '{1}'
+                                            and FKmsr_id = {2} and msr_value = {3};"""
+                    query = query.format(country_id, date, msr_id, msr_value)
+                    self.__cursor.execute(query)
+                    self.__connection.commit()
+                else:
+                    # this measurement isn't exist in measurement_update table
+                    return {'isFound': False}
+
             return {'isFound': True}
 
         except mysql.connector.Error as error:
@@ -731,8 +762,6 @@ class Queries:
             self.close()
             return {'connection_error': True}
 
-        except IndexError:
-            return {'isFound': False}
-
         except Exception as error:
-            return {'error': str(error)}
+            print("Error in reject_user_update: {}".format(error))
+            return {'error': "Error in reject_user_update: {}".format(error)}
