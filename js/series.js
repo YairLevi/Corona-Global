@@ -284,6 +284,7 @@ class SpecialChart {
             btn.setAttribute('data-tooltip', this.charts[i])
             this.buttons.push(btn)
         }
+        this.loading = false;
     }
 
     displayPanel() {
@@ -312,6 +313,8 @@ class SpecialChart {
     }
 
     async displayFirstChart() {
+        if (this.lastShown === 0 || this.loading) return
+        this.loading = true
         this.lastShown = 0
         this.prepareChart(am4charts.XYChart3D)
 
@@ -372,9 +375,12 @@ class SpecialChart {
         population.columns.template.tooltipX = am4core.percent(50);
         population.columns.template.tooltipY = am4core.percent(25);
         population.tooltip.pointerOrientation = 'up'
+        this.loading = false
     }
 
     async displaySecondChart() {
+        if (this.lastShown === 1 || this.loading) return
+        this.loading = true
         this.lastShown = 1
         this.prepareChart(am4charts.PieChart3D)
 
@@ -404,9 +410,12 @@ class SpecialChart {
 
         series.dataFields.value = "percentage";
         series.dataFields.category = "continent";
+        this.loading = false
     }
 
     async displayThirdChart() {
+        if (this.lastShown === 2 || this.loading) return
+        this.loading = true
         this.lastShown = 2
         this.prepareChart(am4charts.XYChart3D)
 
@@ -470,7 +479,7 @@ class SpecialChart {
         aged70.columns.template.tooltipX = am4core.percent(50);
         aged70.columns.template.tooltipY = am4core.percent(25);
         aged70.tooltip.pointerOrientation = 'up'
-
+        this.loading = false
     }
 }
 
