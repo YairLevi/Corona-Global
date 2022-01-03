@@ -42,7 +42,8 @@ countryData.then(data => {
     polygonTemplate.events.on('hit', (ev) => {
         let country = ev.target.dataItem.dataContext.name
         lineChart.country.value = country
-        lineChart.displayChart()
+        lineChart.displayPanel()
+        // lineChart.displayChart()
         ev.target.series.chart.zoomToMapObject(ev.target, 3)
     })
 

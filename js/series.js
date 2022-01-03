@@ -285,6 +285,7 @@ class SpecialChart {
             this.buttons.push(btn)
         }
         this.loading = false;
+        this.panelFlag = true;
     }
 
     displayPanel() {
@@ -301,8 +302,12 @@ class SpecialChart {
             ss.appendChild(btn)
             panel.appendChild(ss)
         }
-        if (this.lastShown !== undefined)
-            this.buttons[this.lastShown].onclick()
+        this.panelFlag = true;
+        if (this.lastShown !== undefined) {
+            let temp = this.lastShown
+            this.lastShown = undefined
+            this.buttons[temp].onclick()
+        }
     }
 
     prepareChart(Class) {
